@@ -8,18 +8,17 @@ using Microsoft.EntityFrameworkCore;
 using ContosoUniversity.Data;
 using ContosoUniversity.Models;
 
-namespace ContosoUniversity.Pages.Departaments
+namespace ContosoUniversity.Pages.Departments
 {
-    public class DeleteModel : PageModel
+    public class DetailsModel : PageModel
     {
         private readonly ContosoUniversity.Data.SchoolContext _context;
 
-        public DeleteModel(ContosoUniversity.Data.SchoolContext context)
+        public DetailsModel(ContosoUniversity.Data.SchoolContext context)
         {
             _context = context;
         }
 
-        [BindProperty]
         public Department Department { get; set; } = default!;
 
         public async Task<IActionResult> OnGetAsync(int? id)
@@ -39,24 +38,6 @@ namespace ContosoUniversity.Pages.Departaments
             }
 
             return NotFound();
-        }
-
-        public async Task<IActionResult> OnPostAsync(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var department = await _context.Departments.FindAsync(id);
-            if (department != null)
-            {
-                Department = department;
-                _context.Departments.Remove(Department);
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToPage("./Index");
         }
     }
 }
