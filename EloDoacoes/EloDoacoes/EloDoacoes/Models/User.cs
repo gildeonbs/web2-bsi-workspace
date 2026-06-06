@@ -12,8 +12,6 @@ namespace EloDoacoes.Models
         public string Email { get; set; }
         public string PasswordHash { get; set; }
         public DateTime RegistrationDate { get; set; }
-
-        // Foreign Keys
         public Role Role { get; set; }
     }
 }

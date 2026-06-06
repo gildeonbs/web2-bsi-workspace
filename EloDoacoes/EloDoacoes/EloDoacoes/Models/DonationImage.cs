@@ -7,8 +7,7 @@
         public byte[] ImageData { get; set; } = null!;
         public string ContentType { get; set; } = null!;
         public string FileName { get; set; } = null!;
-
-        // Foreign Key Navigation Property
+        public int DisplayOrder { get; set; }
         public Donation Donation { get; set; } = null!;
     }
 }

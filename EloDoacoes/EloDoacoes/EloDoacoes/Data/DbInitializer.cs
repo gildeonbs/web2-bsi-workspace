@@ -11,8 +11,7 @@ namespace EloDoacoes.Data
         {
             context.Database.EnsureCreated();
 
-
-
+            // ## --------------------------------------------------------------------------------------------------------------
             // Look for any roles.
             if (context.Roles.Any())
             {
@@ -30,10 +29,7 @@ namespace EloDoacoes.Data
             }
             context.SaveChanges();
 
-            var userRole = roles.First(r => r.Name == RoleEnum.StandardUser);
-
-
-
+            // ## --------------------------------------------------------------------------------------------------------------
             // Look for any users.
             if (context.Users.Any())
             {
@@ -42,8 +38,8 @@ namespace EloDoacoes.Data
 
             var users = new User[]
             {
-                new User{Name="John",Email="john.doe@example.com",PasswordHash="hashed_password_1",RegistrationDate=DateTime.Parse("2023-01-01"),Role=userRole},
-                new User{Name="Jane",Email="jane.smith@example.com",PasswordHash="hashed_password_2",RegistrationDate=DateTime.Parse("2023-01-01"),Role=userRole}
+                new User{Name="John",Email="john.doe@example.com",PasswordHash="hashed_password_1",RegistrationDate=DateTime.Parse("2023-01-01"),Role=roles[0]},
+                new User{Name="Jane",Email="jane.smith@example.com",PasswordHash="hashed_password_2",RegistrationDate=DateTime.Parse("2023-01-01"),Role=roles[0]}
             };
             foreach (User u in users)
             {
@@ -54,8 +50,7 @@ namespace EloDoacoes.Data
             var userJohn = users.First(u => u.Name == "John");
             var userJane = users.First(u => u.Name == "Jane");
 
-
-
+            // ## --------------------------------------------------------------------------------------------------------------
             // Look for any categories.
             if (context.Categories.Any())
             {
@@ -82,8 +77,7 @@ namespace EloDoacoes.Data
                 var donationCategoryFood = categories.First(c => c.Name == "Alimentos");
                 var donationCategoryElectronics = categories.First(c => c.Name == "Eletrônicos");
 
-
-
+            // ## --------------------------------------------------------------------------------------------------------------
             // Look for any donation statuses.
             if (context.DonationStatuses.Any())
             {
@@ -92,8 +86,8 @@ namespace EloDoacoes.Data
 
             var donationStatuses = new DonationStatus[]
             {
-                new DonationStatus{Name=DonationStatusEnum.Available},
-                new DonationStatus{Name=DonationStatusEnum.Reserved},
+                new DonationStatus{Name=DonationStatusNameEnum.Available},
+                new DonationStatus{Name=DonationStatusNameEnum.Reserved},
             };
             foreach (DonationStatus ds in donationStatuses)
             {
@@ -101,11 +95,10 @@ namespace EloDoacoes.Data
             }
             context.SaveChanges();
 
-            var donationStatusAvailable = donationStatuses.First(ds => ds.Name == DonationStatusEnum.Available);
-            var donationStatusReserved = donationStatuses.First(ds => ds.Name == DonationStatusEnum.Reserved);
+            var donationStatusAvailable = donationStatuses.First(ds => ds.Name == DonationStatusNameEnum.Available);
+            var donationStatusReserved = donationStatuses.First(ds => ds.Name == DonationStatusNameEnum.Reserved);
 
-
-
+            // ## --------------------------------------------------------------------------------------------------------------
             // Look for any donations.
             if (context.Donations.Any())
             {
@@ -129,8 +122,7 @@ namespace EloDoacoes.Data
             }
             context.SaveChanges();
 
-
-
+            // ## --------------------------------------------------------------------------------------------------------------
             // Look for any donation images.
             if (context.DonationImages.Any())
             {
@@ -139,14 +131,14 @@ namespace EloDoacoes.Data
 
             var donationImages = new DonationImage[]
             {
-                new DonationImage{DonationId=donations[0].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="livros.jpg"},
-                new DonationImage{DonationId=donations[1].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="armario.jpg"},
-                new DonationImage{DonationId=donations[2].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="mesa.jpg"},
-                new DonationImage{DonationId=donations[3].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="roupas.jpg"},
-                new DonationImage{DonationId=donations[4].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="alimentos.jpg"},
-                new DonationImage{DonationId=donations[5].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="livros_portugues.jpg"},
-                new DonationImage{DonationId=donations[6].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="televisor.jpg"},
-                new DonationImage{DonationId=donations[7].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="roupas_masculinas.jpg"}
+                new DonationImage{DonationId=donations[0].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="livros.jpg", DisplayOrder=1},
+                new DonationImage{DonationId=donations[1].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="armario.jpg", DisplayOrder=1},
+                new DonationImage{DonationId=donations[2].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="mesa.jpg", DisplayOrder=1},
+                new DonationImage{DonationId=donations[3].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="roupas.jpg", DisplayOrder=1},
+                new DonationImage{DonationId=donations[4].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="alimentos.jpg", DisplayOrder=1},
+                new DonationImage{DonationId=donations[5].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="livros_portugues.jpg", DisplayOrder=1},
+                new DonationImage{DonationId=donations[6].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="televisor.jpg", DisplayOrder=1},
+                new DonationImage{DonationId=donations[7].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="roupas_masculinas.jpg", DisplayOrder=1}
             };
             foreach (DonationImage di in donationImages)
             {
@@ -154,8 +146,28 @@ namespace EloDoacoes.Data
             }
             context.SaveChanges();
 
+            // ## --------------------------------------------------------------------------------------------------------------
+            // Look for any reservations statuses.
+            if (context.ReservationsStatuses.Any())
+            {
+                return;   // DB has been seeded
+            }
+            var reservationStatuses = new ReservationStatus[]
+            {
+                new ReservationStatus{Name=ReservationStatusNameEnum.Pending},
+                new ReservationStatus{Name=ReservationStatusNameEnum.Confirmed},
+                new ReservationStatus{Name=ReservationStatusNameEnum.Cancelled}
+            };
+            foreach(var rs in reservationStatuses) {
+                context.ReservationsStatuses.Add(rs);
+            }
+            context.SaveChanges();
 
+            var reservationStatusPending = reservationStatuses.First(rs => rs.Name == ReservationStatusNameEnum.Pending);
+            var reservationStatusConfirmed = reservationStatuses.First(rs => rs.Name == ReservationStatusNameEnum.Confirmed);
+            var reservationStatusCancelled = reservationStatuses.First(rs => rs.Name == ReservationStatusNameEnum.Cancelled);
 
+            // ## --------------------------------------------------------------------------------------------------------------
             // Look for any reservations.
             if (context.Reservations.Any())
             {
@@ -164,14 +176,14 @@ namespace EloDoacoes.Data
 
             var reservations = new Reservation[]
             {
-                new Reservation{ReservationDate=DateTime.Parse("2026-01-10"), Donation=donations[0], ReservationStatus=ReservationStatusEnum.Pending, User=userJane},
-                new Reservation{ReservationDate=DateTime.Parse("2026-01-15"), Donation=donations[1], ReservationStatus=ReservationStatusEnum.Confirmed, User=userJohn},
-                new Reservation{ReservationDate=DateTime.Parse("2026-01-20"), Donation=donations[2], ReservationStatus=ReservationStatusEnum.Cancelled, User=userJane},
-                new Reservation{ReservationDate=DateTime.Parse("2026-01-25"), Donation=donations[3], ReservationStatus=ReservationStatusEnum.Pending, User=userJohn},
-                new Reservation{ReservationDate=DateTime.Parse("2026-01-30"), Donation=donations[4], ReservationStatus=ReservationStatusEnum.Confirmed, User=userJane},
-                new Reservation{ReservationDate=DateTime.Parse("2026-02-05"), Donation=donations[5], ReservationStatus=ReservationStatusEnum.Cancelled, User=userJohn},
-                new Reservation{ReservationDate=DateTime.Parse("2026-02-10"), Donation=donations[6], ReservationStatus=ReservationStatusEnum.Pending, User=userJane},
-                new Reservation{ReservationDate=DateTime.Parse("2026-02-15"), Donation=donations[7], ReservationStatus=ReservationStatusEnum.Confirmed, User=userJohn}
+                new Reservation{ReservationDate=DateTime.Parse("2026-01-10"), Donation=donations[0], ReservationStatus=reservationStatusPending, User=userJane},
+                new Reservation{ReservationDate=DateTime.Parse("2026-01-15"), Donation=donations[1], ReservationStatus=reservationStatusConfirmed, User=userJohn},
+                new Reservation{ReservationDate=DateTime.Parse("2026-01-20"), Donation=donations[2], ReservationStatus=reservationStatusCancelled, User=userJane},
+                new Reservation{ReservationDate=DateTime.Parse("2026-01-25"), Donation=donations[3], ReservationStatus=reservationStatusPending, User=userJohn},
+                new Reservation{ReservationDate=DateTime.Parse("2026-01-30"), Donation=donations[4], ReservationStatus=reservationStatusConfirmed, User=userJane},
+                new Reservation{ReservationDate=DateTime.Parse("2026-02-05"), Donation=donations[5], ReservationStatus=reservationStatusCancelled, User=userJohn},
+                new Reservation{ReservationDate=DateTime.Parse("2026-02-10"), Donation=donations[6], ReservationStatus=reservationStatusPending, User=userJane},
+                new Reservation{ReservationDate=DateTime.Parse("2026-02-15"), Donation=donations[7], ReservationStatus=reservationStatusConfirmed, User=userJohn}
             };
             foreach(Reservation r in reservations)
             {

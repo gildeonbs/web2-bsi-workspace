@@ -2,8 +2,7 @@
 
 namespace EloDoacoes.Models
 {
-
-    public enum DonationStatusEnum
+    public enum DonationStatusNameEnum
     {
         Available,
         Reserved,
@@ -15,6 +14,6 @@ namespace EloDoacoes.Models
     public class DonationStatus
     {
         public int DonationStatusID { get; set; }
-        public DonationStatusEnum Name { get; set; } = DonationStatusEnum.Available;
+        public DonationStatusNameEnum Name { get; set; } = DonationStatusNameEnum.Available;
     }
 }

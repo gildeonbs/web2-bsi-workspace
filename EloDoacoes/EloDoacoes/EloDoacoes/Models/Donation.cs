@@ -9,8 +9,6 @@ namespace EloDoacoes.Models
         public string Title { get; set; }
         public string Description { get; set; } 
         public DateTime RegistrationDate { get; set; }
-
-        // Foreign Keys
         public User User { get; set; }
         public Category Category { get; set; }
         public DonationStatus DonationStatus { get; set; }
