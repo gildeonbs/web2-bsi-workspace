@@ -4,33 +4,59 @@
     ViewData["Title"] = "Details";
 }
 
-<h1>Details</h1>
+<h1>Detalhes</h1>
 
 <div>
-    <h4>Donation</h4>
+    <h4>Doação</h4>
     <hr />
     <dl class="row">
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Title)
+            <!-- @Html.DisplayNameFor(model => model.Title) -->
+            Título
         </dt>
         <dd class = "col-sm-10">
             @Html.DisplayFor(model => model.Title)
         </dd>
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
+            <!-- @Html.DisplayNameFor(model => model.Description) -->
+            Descrição
         </dt>
         <dd class = "col-sm-10">
             @Html.DisplayFor(model => model.Description)
         </dd>
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.RegistrationDate)
+            <!-- @Html.DisplayNameFor(model => model.RegistrationDate) -->
+            Data de Registro
         </dt>
         <dd class = "col-sm-10">
             @Html.DisplayFor(model => model.RegistrationDate)
         </dd>
+        <dt class="col-sm-2">
+            <!-- @Html.DisplayNameFor(model => model.Reservations) -->
+            Reservas
+        </dt>
+        <dd class="col-sm-10">
+            <table class="table">
+                <tr>
+                    <th>Status da Reserva</th>
+                    <th>Data da Reserva</th>
+                </tr>
+                @foreach (var item in Model.Reservations)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.ReservationStatus.Name)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.ReservationDate)
+                        </td>
+                    </tr>
+                }
+            </table>
+        </dd>
     </dl>
 </div>
 <div>
-    <a asp-action="Edit" asp-route-id="@Model.DonationID">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Edit" asp-route-id="@Model.DonationID">Editar</a> |
+    <a asp-action="Index">Voltar para a Lista</a>
 </div>

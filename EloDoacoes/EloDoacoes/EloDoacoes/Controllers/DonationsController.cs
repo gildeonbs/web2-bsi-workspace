@@ -33,8 +33,16 @@ namespace EloDoacoes.Controllers
                 return NotFound();
             }
 
+            //var donation = await _context.Donations
+            //    .FirstOrDefaultAsync(m => m.DonationID == id);
+
             var donation = await _context.Donations
+                .Include(d => d.Reservations)
+                .ThenInclude(r => r.ReservationStatus)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.DonationID == id);
+
+
             if (donation == null)
             {
                 return NotFound();

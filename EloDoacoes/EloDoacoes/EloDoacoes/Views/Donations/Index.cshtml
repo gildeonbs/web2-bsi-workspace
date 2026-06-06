@@ -4,14 +4,18 @@
     ViewData["Title"] = "Minhas Doações";
 }
 
-<h1>Index</h1>
+<h1>@ViewData["Title"]</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create">Criar Nova Doação</a>
 </p>
 <table class="table">
     <thead>
         <tr>
+            <th>Título</th>
+            <th>Descrição</th>
+            <th>Data de Registro</th>
+            <!--
             <th>
                 @Html.DisplayNameFor(model => model.Title)
             </th>
@@ -21,6 +25,7 @@
             <th>
                 @Html.DisplayNameFor(model => model.RegistrationDate)
             </th>
+            -->
             <th></th>
         </tr>
     </thead>
@@ -37,9 +42,9 @@
                 @Html.DisplayFor(modelItem => item.RegistrationDate)
             </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.DonationID">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.DonationID">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.DonationID">Delete</a>
+                <a asp-action="Edit" asp-route-id="@item.DonationID">Editar</a> |
+                <a asp-action="Details" asp-route-id="@item.DonationID">Detalhes</a> |
+                <a asp-action="Delete" asp-route-id="@item.DonationID">Excluir</a>
             </td>
         </tr>
 }
