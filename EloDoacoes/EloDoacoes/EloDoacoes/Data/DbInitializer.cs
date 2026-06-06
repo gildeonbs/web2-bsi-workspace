@@ -42,8 +42,8 @@ namespace EloDoacoes.Data
 
             var users = new User[]
             {
-            new User{Name="John",Email="john.doe@example.com",PasswordHash="hashed_password_1",RegistrationDate=DateTime.Parse("2023-01-01"),Role=userRole},
-            new User{Name="Jane",Email="jane.smith@example.com",PasswordHash="hashed_password_2",RegistrationDate=DateTime.Parse("2023-01-01"),Role=userRole}
+                new User{Name="John",Email="john.doe@example.com",PasswordHash="hashed_password_1",RegistrationDate=DateTime.Parse("2023-01-01"),Role=userRole},
+                new User{Name="Jane",Email="jane.smith@example.com",PasswordHash="hashed_password_2",RegistrationDate=DateTime.Parse("2023-01-01"),Role=userRole}
             };
             foreach (User u in users)
             {
@@ -76,11 +76,11 @@ namespace EloDoacoes.Data
             }
             context.SaveChanges();
 
-            var donationCategoryBook = categories.First(c => c.Name == "Livros");
-            var donationCategoryFurniture = categories.First(c => c.Name == "Móveis");
-            var donationCategoryClothing = categories.First(c => c.Name == "Roupas");
-            var donationCategoryFood = categories.First(c => c.Name == "Alimentos");
-            var donationCategoryElectronics = categories.First(c => c.Name == "Eletrônicos");
+                var donationCategoryBook = categories.First(c => c.Name == "Livros");
+                var donationCategoryFurniture = categories.First(c => c.Name == "Móveis");
+                var donationCategoryClothing = categories.First(c => c.Name == "Roupas");
+                var donationCategoryFood = categories.First(c => c.Name == "Alimentos");
+                var donationCategoryElectronics = categories.First(c => c.Name == "Eletrônicos");
 
 
 
@@ -114,18 +114,43 @@ namespace EloDoacoes.Data
 
             var donations = new Donation[]
             {
-            new Donation{Title="Livros de Matemática",Description="Livros em excelente condição",RegistrationDate=DateTime.Parse("2005-09-01"),Category=donationCategoryBook, user=userJohn, DonationStatus=donationStatusAvailable},
-            new Donation{Title="Armário",Description="Armário em bom estado",RegistrationDate=DateTime.Parse("2002-09-01"),Category=donationCategoryFurniture, user=userJane, DonationStatus=donationStatusReserved},
-            new Donation{Title="Mesa de Jantar",Description="Mesa de jantar de madeira",RegistrationDate=DateTime.Parse("2003-09-01"),Category=donationCategoryFurniture, user=userJohn, DonationStatus=donationStatusAvailable},
-            new Donation{Title="Roupas de Inverno",Description="Roupas de inverno em ótimo estado",RegistrationDate=DateTime.Parse("2002-09-01"),Category=donationCategoryClothing, user=userJane, DonationStatus=donationStatusAvailable},
-            new Donation{Title="Alimento não perecível",Description="Alimentos não perecíveis dentro do prazo de validade",RegistrationDate=DateTime.Parse("2002-09-01"),Category=donationCategoryFood, user=userJohn, DonationStatus=donationStatusReserved},
-            new Donation{Title="Livros de Português",Description="Livros de português em excelente condição",RegistrationDate=DateTime.Parse("2001-09-01"),Category=donationCategoryBook, user=userJane, DonationStatus=donationStatusAvailable},
-            new Donation{Title="Televisor",Description="Televisor de tubo",RegistrationDate=DateTime.Parse("2003-09-01"),Category=donationCategoryElectronics, user=userJohn, DonationStatus=donationStatusAvailable},
-            new Donation{Title="Roupas Masculinas",Description="Roupas masculinas em ótimo estado",RegistrationDate=DateTime.Parse("2005-09-01"),Category=donationCategoryClothing, user=userJane, DonationStatus=donationStatusAvailable}
+                new Donation{Title="Livros de Matemática",Description="Livros em excelente condição",RegistrationDate=DateTime.Parse("2005-09-01"),Category=donationCategoryBook, User=userJohn, DonationStatus=donationStatusAvailable},
+                new Donation{Title="Armário",Description="Armário em bom estado",RegistrationDate=DateTime.Parse("2002-09-01"),Category=donationCategoryFurniture, User=userJane, DonationStatus=donationStatusReserved},
+                new Donation{Title="Mesa de Jantar",Description="Mesa de jantar de madeira",RegistrationDate=DateTime.Parse("2003-09-01"),Category=donationCategoryFurniture, User=userJohn, DonationStatus=donationStatusAvailable},
+                new Donation{Title="Roupas de Inverno",Description="Roupas de inverno em ótimo estado",RegistrationDate=DateTime.Parse("2002-09-01"),Category=donationCategoryClothing, User=userJane, DonationStatus=donationStatusAvailable},
+                new Donation{Title="Alimento não perecível",Description="Alimentos não perecíveis dentro do prazo de validade",RegistrationDate=DateTime.Parse("2002-09-01"),Category=donationCategoryFood, User=userJohn, DonationStatus=donationStatusReserved},
+                new Donation{Title="Livros de Português",Description="Livros de português em excelente condição",RegistrationDate=DateTime.Parse("2001-09-01"),Category=donationCategoryBook, User=userJane, DonationStatus=donationStatusAvailable},
+                new Donation{Title="Televisor",Description="Televisor de tubo",RegistrationDate=DateTime.Parse("2003-09-01"),Category=donationCategoryElectronics, User=userJohn, DonationStatus=donationStatusAvailable},
+                new Donation{Title="Roupas Masculinas",Description="Roupas masculinas em ótimo estado",RegistrationDate=DateTime.Parse("2005-09-01"),Category=donationCategoryClothing, User=userJane, DonationStatus=donationStatusAvailable}
             };
             foreach (Donation d in donations)
             {
                 context.Donations.Add(d);
+            }
+            context.SaveChanges();
+
+
+
+            // Look for any donation images.
+            if (context.DonationImages.Any())
+            {
+                return;   // DB has been seeded
+            }
+
+            var donationImages = new DonationImage[]
+            {
+                new DonationImage{DonationId=donations[0].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="livros.jpg"},
+                new DonationImage{DonationId=donations[1].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="armario.jpg"},
+                new DonationImage{DonationId=donations[2].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="mesa.jpg"},
+                new DonationImage{DonationId=donations[3].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="roupas.jpg"},
+                new DonationImage{DonationId=donations[4].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="alimentos.jpg"},
+                new DonationImage{DonationId=donations[5].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="livros_portugues.jpg"},
+                new DonationImage{DonationId=donations[6].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="televisor.jpg"},
+                new DonationImage{DonationId=donations[7].DonationID, ImageData=new byte[] {0xFF, 0xD8, 0xFF}, ContentType="image/jpeg", FileName="roupas_masculinas.jpg"}
+            };
+            foreach (DonationImage di in donationImages)
+            {
+                context.DonationImages.Add(di);
             }
             context.SaveChanges();
 
@@ -148,6 +173,11 @@ namespace EloDoacoes.Data
                 new Reservation{ReservationDate=DateTime.Parse("2026-02-10"), Donation=donations[6], ReservationStatus=ReservationStatusEnum.Pending, User=userJane},
                 new Reservation{ReservationDate=DateTime.Parse("2026-02-15"), Donation=donations[7], ReservationStatus=ReservationStatusEnum.Confirmed, User=userJohn}
             };
+            foreach(Reservation r in reservations)
+            {
+                context.Reservations.Add(r);
+            }
+            context.SaveChanges();
 
         }
     }

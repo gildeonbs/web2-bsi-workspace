@@ -15,7 +15,7 @@ namespace EloDoacoes.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<DonationStatus> DonationStatuses { get; set; }
         public DbSet<Role> Roles { get; set; }
-        public DbSet<DonationImage> Images { get; set; }
+        public DbSet<DonationImage> DonationImages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

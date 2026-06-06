@@ -11,7 +11,7 @@ namespace EloDoacoes.Models
         public DateTime RegistrationDate { get; set; }
 
         // Foreign Keys
-        public User user { get; set; }
+        public User User { get; set; }
         public Category Category { get; set; }
         public DonationStatus DonationStatus { get; set; }
         public ICollection<Reservation> Reservations { get; set; }
