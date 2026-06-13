@@ -13,6 +13,7 @@ namespace EloDoacoes.Controllers
     public class DonationsController : Controller
     {
         private readonly EloDoacoesContext _context;
+        // Category selector and image upload/remove support added to Create and Edit actions. (patched)
 
         public DonationsController(EloDoacoesContext context)
         {
@@ -60,6 +61,7 @@ namespace EloDoacoes.Controllers
         // GET: Donations/Create
         public IActionResult Create()
         {
+            ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name");
             return View();
         }
 
@@ -68,10 +70,16 @@ namespace EloDoacoes.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("DonationID,Title,Description,RegistrationDate")] Donation donation, Microsoft.AspNetCore.Http.IFormFileCollection? images)
+        public async Task<IActionResult> Create([Bind("DonationID,Title,Description,RegistrationDate")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection? images)
         {
             if (ModelState.IsValid)
             {
+                if (categoryId.HasValue)
+                {
+                    var cat = await _context.Categories.FindAsync(categoryId.Value);
+                    if (cat != null) donation.Category = cat;
+                }
+
                 // add donation first to get its ID
                 _context.Add(donation);
                 await _context.SaveChangesAsync();
@@ -99,10 +107,12 @@ namespace EloDoacoes.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+            ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name", categoryId);
             return View(donation);
         }
 
         // GET: Donations/Edit/5
+        // Edit action includes images and category selection for the form.
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -110,11 +120,15 @@ namespace EloDoacoes.Controllers
                 return NotFound();
             }
 
-            var donation = await _context.Donations.FindAsync(id);
+            var donation = await _context.Donations
+                .Include(d => d.DonationImages)
+                .Include(d => d.Category)
+                .FirstOrDefaultAsync(d => d.DonationID == id);
             if (donation == null)
             {
                 return NotFound();
             }
+            ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name", donation.Category?.CategoryID);
             return View(donation);
         }
 
@@ -123,7 +137,7 @@ namespace EloDoacoes.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("DonationID,Title,Description,RegistrationDate")] Donation donation)
+        public async Task<IActionResult> Edit(int id, [Bind("DonationID,Title,Description,RegistrationDate")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection? images, int[]? removeImageIds)
         {
             if (id != donation.DonationID)
             {
@@ -134,8 +148,56 @@ namespace EloDoacoes.Controllers
             {
                 try
                 {
-                    _context.Update(donation);
+                    var existing = await _context.Donations.Include(d => d.DonationImages).FirstOrDefaultAsync(d => d.DonationID == id);
+                    if (existing == null) return NotFound();
+
+                    existing.Title = donation.Title;
+                    existing.Description = donation.Description;
+                    existing.RegistrationDate = donation.RegistrationDate;
+
+                    if (categoryId.HasValue)
+                    {
+                        var cat = await _context.Categories.FindAsync(categoryId.Value);
+                        existing.Category = cat;
+                    }
+
+                    // remove selected images
+                    if (removeImageIds != null && removeImageIds.Length > 0)
+                    {
+                        foreach (var imgId in removeImageIds)
+                        {
+                            var img = await _context.DonationImages.FindAsync(imgId);
+                            if (img != null && img.DonationId == existing.DonationID)
+                            {
+                                _context.DonationImages.Remove(img);
+                            }
+                        }
+                    }
+
+                    // add uploaded images
+                    if (images != null && images.Count > 0)
+                    {
+                        foreach (var file in images)
+                        {
+                            if (file != null && file.Length > 0)
+                            {
+                                using var ms = new System.IO.MemoryStream();
+                                await file.CopyToAsync(ms);
+                                var img = new DonationImage
+                                {
+                                    DonationId = existing.DonationID,
+                                    ImageData = ms.ToArray(),
+                                    ContentType = file.ContentType ?? "application/octet-stream",
+                                    FileName = file.FileName,
+                                    DisplayOrder = 0
+                                };
+                                _context.DonationImages.Add(img);
+                            }
+                        }
+                    }
+
                     await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -148,8 +210,8 @@ namespace EloDoacoes.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
+            ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name", categoryId);
             return View(donation);
         }
 
@@ -177,8 +239,11 @@ namespace EloDoacoes.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var donation = await _context.Donations.FindAsync(id);
-            _context.Donations.Remove(donation);
-            await _context.SaveChangesAsync();
+            if (donation != null)
+            {
+                _context.Donations.Remove(donation);
+                await _context.SaveChangesAsync();
+            }
             return RedirectToAction(nameof(Index));
         }
 
