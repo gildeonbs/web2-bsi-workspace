@@ -38,7 +38,8 @@ namespace EloDoacoes.Controllers
 
             var donation = await _context.Donations
                 .Include(d => d.Reservations)
-                .ThenInclude(r => r.ReservationStatus)
+                    .ThenInclude(r => r.ReservationStatus)
+                .Include(d => d.DonationImages)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.DonationID == id);
 
@@ -62,12 +63,35 @@ namespace EloDoacoes.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("DonationID,Title,Description,RegistrationDate")] Donation donation)
+        public async Task<IActionResult> Create([Bind("DonationID,Title,Description,RegistrationDate")] Donation donation, Microsoft.AspNetCore.Http.IFormFileCollection? images)
         {
             if (ModelState.IsValid)
             {
+                // add donation first to get its ID
                 _context.Add(donation);
                 await _context.SaveChangesAsync();
+
+                if (images != null && images.Count > 0)
+                {
+                    foreach (var file in images)
+                    {
+                        if (file != null && file.Length > 0)
+                        {
+                            using var ms = new System.IO.MemoryStream();
+                            await file.CopyToAsync(ms);
+                            var img = new DonationImage
+                            {
+                                DonationId = donation.DonationID,
+                                ImageData = ms.ToArray(),
+                                ContentType = file.ContentType ?? "application/octet-stream",
+                                FileName = file.FileName,
+                                DisplayOrder = 0
+                            };
+                            _context.DonationImages.Add(img);
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
                 return RedirectToAction(nameof(Index));
             }
             return View(donation);

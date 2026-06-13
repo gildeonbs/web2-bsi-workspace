@@ -31,6 +31,23 @@
         <dd class = "col-sm-10">
             @Html.DisplayFor(model => model.RegistrationDate)
         </dd>
+        <dt class = "col-sm-2">
+            Imagens
+        </dt>
+        <dd class = "col-sm-10">
+            @if (Model.DonationImages != null && Model.DonationImages.Count > 0)
+            {
+                <div class="donation-images">
+                    @foreach (var img in Model.DonationImages)
+                    {
+                        if (img?.ImageData != null && img.ImageData.Length > 0)
+                        {
+                            <img src="data:@img.ContentType;base64,@System.Convert.ToBase64String(img.ImageData)" alt="@img.FileName" style="max-width:200px; max-height:200px; margin-right:8px; margin-bottom:8px;" />
+                        }
+                    }
+                </div>
+            }
+        </dd>
         <dt class="col-sm-2">
             <!-- @Html.DisplayNameFor(model => model.Reservations) -->
             Reservas
