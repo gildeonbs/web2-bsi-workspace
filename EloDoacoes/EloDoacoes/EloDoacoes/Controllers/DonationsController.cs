@@ -22,7 +22,12 @@ namespace EloDoacoes.Controllers
         // GET: Donations
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Donations.ToListAsync());
+            // include images so the Index view can show thumbnails
+            var donations = await _context.Donations
+                .Include(d => d.DonationImages)
+                .AsNoTracking()
+                .ToListAsync();
+            return View(donations);
         }
 
         // GET: Donations/Details/5
