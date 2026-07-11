@@ -1,5 +1,5 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,7 +16,7 @@
                     <span>Elo Doações</span>
                 </a>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                        aria-expanded="false" aria-label="Alternar navegação">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
@@ -27,8 +27,33 @@
                         </li>
                         -->
                         <li class="nav-item ml-auto">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Donations" asp-action="Index">Minhas Doações</a>
+                            <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Donations" asp-action="MyDonations">Minhas Doações</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Donations" asp-action="MyAdoptions">Adoções</a>
+                        </li>
+
+                        @if (User?.Identity?.IsAuthenticated == true)
+                        {
+                            var firstName = "";
+                            if (!string.IsNullOrEmpty(User.Identity.Name))
+                            {
+                                var parts = User.Identity.Name.Trim().Split(' ');
+                                firstName = parts.Length > 0 ? parts[0] : User.Identity.Name;
+                            }
+                            <li class="nav-item">
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="form-inline my-0">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-link nav-link text-dark" style="padding:0">Sair (@firstName)</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Entrar</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>

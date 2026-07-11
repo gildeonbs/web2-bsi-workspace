@@ -1,68 +1,194 @@
-﻿@model EloDoacoes.Models.Donation
-
+@model EloDoacoes.Models.Donation
 @using System.Linq
+@using System.Security.Claims
+@using EloDoacoes.Models
 
 @{
-    ViewData["Title"] = "Detalhes";
+    ViewData["Title"] = Model.Title ?? "Detalhes da Doação";
+    var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    int.TryParse(currentUserIdClaim, out int currentUserId);
+    bool isOwner = Model.User != null && Model.User.UserID == currentUserId;
+    bool isAvailable = Model.DonationStatus != null && (Model.DonationStatus.Name == DonationStatusNameEnum.Available || Model.DonationStatus.Name == DonationStatusNameEnum.Reserved);
 }
 
-<h1>Detalhes</h1>
-
-<div>
-    <h4>Doação</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">Título</dt>
-        <dd class = "col-sm-10">@Html.DisplayFor(model => model.Title)</dd>
-
-        <dt class = "col-sm-2">Descrição</dt>
-        <dd class = "col-sm-10">@Html.DisplayFor(model => model.Description)</dd>
-
-        <dt class = "col-sm-2">Data de Registro</dt>
-        <dd class = "col-sm-10">@Html.DisplayFor(model => model.RegistrationDate)</dd>
-
-        <dt class = "col-sm-2">Imagens</dt>
-        <dd class = "col-sm-10">
-            @if (Model.DonationImages != null && Model.DonationImages.Any())
-            {
-                <div class="donation-images">
-                    @foreach (var img in Model.DonationImages.OrderBy(i => i.DisplayOrder))
-                    {
-                        if (img?.ImageData != null && img.ImageData.Length > 0)
-                        {
-                            <img src="data:@img.ContentType;base64,@System.Convert.ToBase64String(img.ImageData)" alt="@img.FileName" style="max-width:200px; max-height:200px; margin-right:8px; margin-bottom:8px;" />
-                        }
-                    }
-                </div>
-            }
-            else
-            {
-                <p class="text-muted">Nenhuma imagem anexada.</p>
-            }
-        </dd>
-
-        <dt class="col-sm-2">Reservas</dt>
-        <dd class="col-sm-10">
-            <table class="table">
-                <tr>
-                    <th>Status da Reserva</th>
-                    <th>Data da Reserva</th>
-                </tr>
-                @if (Model.Reservations != null)
+<div class="container my-4">
+   
+    <div class="row g-5">
+        @* Left Column: Photo Gallery *@
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+                @if (Model.DonationImages != null && Model.DonationImages.Any())
                 {
-                    foreach (var item in Model.Reservations)
+                    var images = Model.DonationImages.OrderBy(i => i.DisplayOrder).ToList();
+                    var firstImg = images.First();
+                    <div class="position-relative bg-dark text-center">
+                        <img id="mainDonationImage" src="data:@firstImg.ContentType;base64,@System.Convert.ToBase64String(firstImg.ImageData)" class="w-100" style="max-height: 500px; object-fit: contain; transition: opacity 0.2s ease-in-out;" alt="@Model.Title" />
+                    </div>
+
+                    @if (images.Count > 1)
                     {
-                        <tr>
-                            <td>@Html.DisplayFor(_ => item.ReservationStatus.Name)</td>
-                            <td>@Html.DisplayFor(_ => item.ReservationDate)</td>
-                        </tr>
+                        <div class="card-body bg-light p-3">
+                            <h6 class="text-muted mb-3">Clique para expandir as fotos (@images.Count disponíveis)</h6>
+                            <div class="row g-2">
+                                @for (int idx = 0; idx < images.Count; idx++)
+                                {
+                                    var img = images[idx];
+                                    var activeClass = idx == 0 ? "border-primary border-3 opacity-100" : "border-secondary opacity-75";
+                                    <div class="col-3 col-sm-2">
+                                        <img src="data:@img.ContentType;base64,@System.Convert.ToBase64String(img.ImageData)" 
+                                             class="img-fluid rounded border shadow-sm w-100 gallery-thumbnail @activeClass" 
+                                             style="height: 80px; object-fit: cover; cursor: pointer; transition: all 0.2s ease;" 
+                                             onclick="switchMainImage(this.src, this)"
+                                             alt="@img.FileName" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
                     }
                 }
-            </table>
-        </dd>
-    </dl>
+                else
+                {
+                    <div class="bg-light text-center p-5">
+                        <img src="~/images/default-donation.svg" style="max-height: 300px; object-fit: contain;" alt="Sem imagem" />
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* Right Column: Details & Donor Info *@
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="badge bg-primary px-3 py-2">@(Model.Category?.Name ?? "Geral")</span>
+                    <span class="badge bg-light text-dark border px-3 py-2">Status: <strong>@(Model.DonationStatus?.Name.ToString() ?? "Disponível")</strong></span>
+                </div>
+
+                <h2 class="fw-bold text-primary mb-3">@Model.Title</h2>
+
+                <p class="text-muted small mb-4">
+                    Cadastrado em @Model.RegistrationDate.ToString("dd/MM/yyyy")
+                </p>
+
+                <h5 class="fw-bold mb-2">Descrição</h5>
+                <p class="text-secondary mb-4" style="white-space: pre-line;">@Model.Description</p>
+
+                <hr class="my-4" />
+
+                <h5 class="fw-bold mb-3">Informações do Doador</h5>
+                <div class="bg-light p-3 rounded-3 mb-4">
+                    @if (Model.User != null)
+                    {
+                        <p class="mb-1"><strong>Doador:</strong> @(string.IsNullOrWhiteSpace(Model.User.Name) ? Model.User.Email : Model.User.Name)</p>
+                        <p class="mb-0"><strong>Contato (E-mail):</strong> <a href="mailto:@Model.User.Email">@Model.User.Email</a></p>
+                    }
+                    else
+                    {
+                        <p class="mb-0 text-muted">Informação de contato não disponível.</p>
+                    }
+                </div>
+
+                @* Action Buttons & Owner Approval Section *@
+                <div>
+                    @if (isOwner)
+                    {
+                        <div class="alert alert-secondary mb-3 text-center">Esta é uma doação cadastrada por você.</div>
+                        <a asp-controller="Donations" asp-action="Edit" asp-route-id="@Model.DonationID" class="btn btn-warning w-100 py-2 mb-4">
+                            Editar Doação
+                        </a>
+
+                        @* SECTION: List of interested users for owner approval *@
+                        <div class="card border shadow-sm rounded-3 p-3 bg-light">
+                            <h5 class="fw-bold text-dark mb-3">
+                                Lista de Interessados (@(Model.Reservations?.Count ?? 0))
+                            </h5>
+                            @if (Model.Reservations != null && Model.Reservations.Any())
+                            {
+                                <div class="list-group">
+                                    @foreach (var res in Model.Reservations.OrderByDescending(r => r.ReservationDate))
+                                    {
+                                        var statusBadge = "bg-warning text-dark";
+                                        var statusLabel = "Pendente";
+                                        if (res.ReservationStatus?.Name == ReservationStatusNameEnum.Confirmed)
+                                        {
+                                            statusBadge = "bg-success text-white";
+                                            statusLabel = "Aprovado";
+                                        }
+                                        else if (res.ReservationStatus?.Name == ReservationStatusNameEnum.Cancelled)
+                                        {
+                                            statusBadge = "bg-secondary text-white";
+                                            statusLabel = "Cancelado";
+                                        }
+
+                                        <div class="list-group-item d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+                                            <div>
+                                                <strong>@(res.User?.Name ?? res.User?.Email)</strong>
+                                                <div class="small text-muted">E-mail: @res.User?.Email</div>
+                                                <div class="small text-muted">Data: @res.ReservationDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                                <span class="badge @statusBadge mt-1">@statusLabel</span>
+                                            </div>
+
+                                            @if (res.ReservationStatus?.Name == ReservationStatusNameEnum.Pending)
+                                            {
+                                                <form asp-controller="Donations" asp-action="ApproveReservation" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reservationId" value="@res.ReservationID" />
+                                                    <button type="submit" class="btn btn-success btn-sm fw-bold px-3 shadow-sm" onclick="return confirm('Aprovar doação para @(res.User?.Name ?? res.User?.Email)? Isso irá concluir a doação e retirá-la do feed.');">
+                                                        Aprovar Usuário
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted small mb-0">Nenhum usuário demonstrou interesse nesta doação ainda.</p>
+                            }
+                        </div>
+                    }
+                    else if (isAvailable)
+                    {
+                        <form asp-controller="Donations" asp-action="Reserve" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="donationId" value="@Model.DonationID" />
+                            <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-sm">
+                                Reservar Doação
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <button class="btn btn-secondary btn-lg w-100 py-3" disabled>
+                            Doação @(Model.DonationStatus?.Name.ToString() ?? "Concluída")
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model.DonationID">Editar</a> |
-    <a asp-action="Index">Voltar para a Lista</a>
-</div>
+
+@section Scripts {
+    <script>
+        function switchMainImage(src, element) {
+            var mainImg = document.getElementById('mainDonationImage');
+            if (mainImg) {
+                mainImg.style.opacity = '0.3';
+                setTimeout(function () {
+                    mainImg.src = src;
+                    mainImg.style.opacity = '1';
+                }, 150);
+            }
+            var thumbnails = document.querySelectorAll('.gallery-thumbnail');
+            thumbnails.forEach(function (thumb) {
+                thumb.classList.remove('border-primary', 'border-3');
+                thumb.classList.add('border-secondary', 'opacity-75');
+            });
+            if (element) {
+                element.classList.remove('border-secondary', 'opacity-75');
+                element.classList.add('border-primary', 'border-3');
+            }
+        }
+    </script>
+}

@@ -1,0 +1,127 @@
+@model IEnumerable<EloDoacoes.Models.Reservation>
+@using System.Linq
+@using EloDoacoes.Models
+
+@{
+    ViewData["Title"] = "Minhas Adoções";
+}
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold text-primary mb-1">Adoções</h1>
+            <p class="text-secondary mb-0">Acompanhe o status das doações que você reservou.</p>
+        </div>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary">
+            Explorar Mais Doações
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-3 text-center p-5 my-4">
+            <div class="py-4">
+                <h4 class="fw-bold text-secondary mb-3">Nenhuma adoção cadastrada</h4>
+                <p class="text-muted mb-4">Você ainda não reservou nenhum item. Veja o feed de doações para encontrar itens disponíveis.</p>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary btn-lg px-4">
+                    Ver Feed de Doações
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4 mb-5 justify-content-start">
+            @foreach (var item in Model)
+            {
+                var donation = item.Donation;
+                if (donation == null) continue;
+
+                string statusBadgeClass = "bg-warning text-dark";
+                string statusText = "Pendente";
+                if (item.ReservationStatus?.Name == ReservationStatusNameEnum.Confirmed)
+                {
+                    statusBadgeClass = "bg-success text-white";
+                    statusText = "Confirmada";
+                }
+                else if (item.ReservationStatus?.Name == ReservationStatusNameEnum.Cancelled)
+                {
+                    statusBadgeClass = "bg-secondary text-white";
+                    statusText = "Cancelada";
+                }
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card h-100 shadow border-0 rounded-3 overflow-hidden donation-card">
+                        <a asp-controller="Donations" asp-action="Details" asp-route-id="@donation.DonationID" class="text-decoration-none d-block">
+                            @if (donation.DonationImages != null && donation.DonationImages.Any())
+                            {
+                                var firstImg = donation.DonationImages.OrderBy(i => i.DisplayOrder).First();
+                                <img src="data:@firstImg.ContentType;base64,@System.Convert.ToBase64String(firstImg.ImageData)" class="card-img-top" style="height: 210px; object-fit: cover;" alt="@donation.Title" />
+                            }
+                            else
+                            {
+                                <img src="~/images/default-donation.svg" class="card-img-top p-4 bg-light" style="height: 210px; object-fit: contain;" alt="Sem imagem" />
+                            }
+                        </a>
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-primary">@(donation.Category?.Name ?? "Geral")</span>
+                                <span class="badge @statusBadgeClass">Status: @statusText</span>
+                            </div>
+
+                            <h5 class="card-title fw-bold mb-2">
+                                <a asp-controller="Donations" asp-action="Details" asp-route-id="@donation.DonationID" class="text-decoration-none text-primary">
+                                    @donation.Title
+                                </a>
+                            </h5>
+
+                            <p class="card-text text-muted small mb-2">
+                                <strong>Data da Adoção:</strong> @item.ReservationDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </p>
+
+                            @if (donation.User != null)
+                            {
+                                <div class="bg-light p-2 rounded small mb-3">
+                                    <strong>Doador:</strong> @(string.IsNullOrWhiteSpace(donation.User.Name) ? donation.User.Email : donation.User.Name)<br />
+                                    <strong>Contato:</strong> <a href="mailto:@donation.User.Email">@donation.User.Email</a>
+                                </div>
+                            }
+
+                            <div class="mt-auto pt-3 border-top d-flex gap-2">
+                                <a asp-controller="Donations" asp-action="Details" asp-route-id="@donation.DonationID" class="btn btn-outline-primary flex-grow-1">
+                                    Ver Detalhes
+                                </a>
+
+                                @if (item.ReservationStatus?.Name == ReservationStatusNameEnum.Pending)
+                                {
+                                    <form asp-controller="Donations" asp-action="CancelAdoption" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja cancelar esta reserva de adoção?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="reservationId" value="@item.ReservationID" />
+                                        <button type="submit" class="btn btn-outline-danger" title="Cancelar Adoção">
+                                            Cancelar
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
