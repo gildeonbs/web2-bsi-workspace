@@ -1,15 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using EloDoacoes.Data;
+using EloDoacoes.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using EloDoacoes.Data;
-using EloDoacoes.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace EloDoacoes.Controllers
 {
+    [Authorize]
     public class DonationsController : Controller
     {
         private readonly EloDoacoesContext _context;
@@ -18,6 +21,229 @@ namespace EloDoacoes.Controllers
         public DonationsController(EloDoacoesContext context)
         {
             _context = context;
+        }
+
+        // GET: Donations/MyDonations - Display user's donations with server-side pagination
+        // Requires authentication. Shows ALL donations regardless of status.
+        public async Task<IActionResult> MyDonations(int page = 1)
+        {
+            const int pageSize = 9; // Fixed page size: 9 donations per page (3x3 grid)
+
+            // Ensure valid page number
+            if (page < 1) page = 1;
+
+            // Ensure user is authenticated (protected by [Authorize] class-level attribute)
+            if (User?.Identity?.IsAuthenticated != true)
+            {
+                return RedirectToAction("Login", "Account", new { returnUrl = Url.Action("MyDonations", "Donations") });
+            }
+
+            // Extract current user ID from claims
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return RedirectToAction("Login", "Account", new { returnUrl = Url.Action("MyDonations", "Donations") });
+            }
+
+            // Build LINQ query: only donations where DonorUserId == currentUserId (no status filter)
+            var query = _context.Donations
+                .AsNoTracking()
+                .Include(d => d.DonationImages)
+                .Include(d => d.DonationStatus)
+                .Include(d => d.User)
+                .Where(d => d.User.UserID == currentUserId)
+                .OrderByDescending(d => d.RegistrationDate);
+
+            // Get total count BEFORE pagination
+            var totalCount = await query.CountAsync();
+
+            // Apply server-side pagination: Skip and Take
+            var donations = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Map donations to view model cards
+            var items = new List<ViewModels.DonationCardViewModel>();
+            foreach (var d in donations)
+            {
+                var mainImage = d.DonationImages?.OrderBy(di => di.DisplayOrder).FirstOrDefault();
+                string base64 = null;
+                if (mainImage?.ImageData != null)
+                {
+                    base64 = Convert.ToBase64String(mainImage.ImageData);
+                }
+
+                items.Add(new ViewModels.DonationCardViewModel
+                {
+                    DonationId = d.DonationID,
+                    Title = d.Title,
+                    ShortDescription = d.Description?.Length > 120 
+                        ? d.Description.Substring(0, 117) + "..." 
+                        : d.Description,
+                    ImageBase64 = base64,
+                    DonationStatus = d.DonationStatus?.Name.ToString() ?? string.Empty,
+                    IsOwner = true
+                });
+            }
+
+            // Create and return paged result ViewModel
+            var model = new ViewModels.MyDonationsViewModel
+            {
+                Items = items,
+                TotalCount = totalCount,
+                CurrentPage = page,
+                PageSize = pageSize
+            };
+
+            return View(model);
+        }
+
+        // GET: Donations/MyAdoptions
+        public async Task<IActionResult> MyAdoptions()
+        {
+            if (User?.Identity?.IsAuthenticated != true)
+            {
+                return RedirectToAction("Login", "Account", new { returnUrl = Url.Action("MyAdoptions", "Donations") });
+            }
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var adoptions = await _context.Reservations
+                .Include(r => r.ReservationStatus)
+                .Include(r => r.Donation)
+                    .ThenInclude(d => d.DonationImages)
+                .Include(r => r.Donation)
+                    .ThenInclude(d => d.Category)
+                .Include(r => r.Donation)
+                    .ThenInclude(d => d.DonationStatus)
+                .Include(r => r.Donation)
+                    .ThenInclude(d => d.User)
+                .Where(r => r.User != null && r.User.UserID == currentUserId)
+                .OrderByDescending(r => r.ReservationDate)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return View(adoptions);
+        }
+
+        // POST: Donations/CancelAdoption
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelAdoption(int reservationId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var reservation = await _context.Reservations
+                .Include(r => r.User)
+                .Include(r => r.Donation)
+                .FirstOrDefaultAsync(r => r.ReservationID == reservationId && r.User.UserID == currentUserId);
+
+            if (reservation != null)
+            {
+                var cancelledStatus = await _context.ReservationsStatuses
+                    .FirstOrDefaultAsync(rs => rs.Name == ReservationStatusNameEnum.Cancelled);
+
+                if (cancelledStatus != null)
+                {
+                    reservation.ReservationStatus = cancelledStatus;
+                    _context.Reservations.Update(reservation);
+
+                    if (reservation.Donation != null)
+                    {
+                        var availableStatus = await _context.DonationStatuses
+                            .FirstOrDefaultAsync(ds => ds.Name == DonationStatusNameEnum.Available);
+                        if (availableStatus != null)
+                        {
+                            reservation.Donation.DonationStatus = availableStatus;
+                            _context.Donations.Update(reservation.Donation);
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Reserva de adoção cancelada com sucesso.";
+                }
+            }
+
+            return RedirectToAction(nameof(MyAdoptions));
+        }
+
+        // POST: Donations/Reserve
+        // Allow anonymous so we can redirect unauthenticated users to login preserving returnUrl
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AllowAnonymous]
+        public async Task<IActionResult> Reserve(int donationId)
+        {
+            // Load donation and ensure it exists
+            var donation = await _context.Donations
+                .Include(d => d.DonationStatus)
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d => d.DonationID == donationId);
+
+            if (donation == null)
+            {
+                return NotFound();
+            }
+
+            // If user not authenticated, redirect to login preserving return URL to the donation details
+            if (User?.Identity?.IsAuthenticated != true)
+            {
+                var returnUrl = Url.Action("Details", "Donations", new { id = donationId });
+                return RedirectToAction("Login", "Account", new { returnUrl });
+            }
+
+            // Parse current user id from claims
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                // If claim missing or invalid, force login
+                var returnUrl = Url.Action("Index", "Home");
+                return RedirectToAction("Login", "Account", new { returnUrl });
+            }
+
+            // Prevent user from reserving their own donation
+            if (donation.User != null && donation.User.UserID == currentUserId)
+            {
+                TempData["ErrorMessage"] = "Você não pode reservar sua própria doação.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Create reservation
+            var reservationStatus = await _context.ReservationsStatuses.FirstOrDefaultAsync(rs => rs.Name == ReservationStatusNameEnum.Pending);
+            var interestedUser = await _context.Users.FirstOrDefaultAsync(u => u.UserID == currentUserId);
+
+            var reservation = new Reservation
+            {
+                ReservationDate = DateTime.UtcNow,
+                Donation = donation,
+                User = interestedUser,
+                ReservationStatus = reservationStatus
+            };
+
+            _context.Reservations.Add(reservation);
+
+            // Optionally mark donation as reserved
+            var reservedStatus = await _context.DonationStatuses.FirstOrDefaultAsync(ds => ds.Name == DonationStatusNameEnum.Reserved);
+            if (reservedStatus != null)
+            {
+                donation.DonationStatus = reservedStatus;
+                _context.Donations.Update(donation);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Reserva de adoção realizada com sucesso! Acompanhe o status abaixo.";
+
+            return RedirectToAction(nameof(MyAdoptions));
         }
 
         // GET: Donations
@@ -32,6 +258,7 @@ namespace EloDoacoes.Controllers
         }
 
         // GET: Donations/Details/5
+        [AllowAnonymous]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -43,8 +270,13 @@ namespace EloDoacoes.Controllers
             //    .FirstOrDefaultAsync(m => m.DonationID == id);
 
             var donation = await _context.Donations
+                .Include(d => d.User)
+                .Include(d => d.Category)
+                .Include(d => d.DonationStatus)
                 .Include(d => d.Reservations)
                     .ThenInclude(r => r.ReservationStatus)
+                .Include(d => d.Reservations)
+                    .ThenInclude(r => r.User)
                 .Include(d => d.DonationImages)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.DonationID == id);
@@ -56,6 +288,75 @@ namespace EloDoacoes.Controllers
             }
 
             return View(donation);
+        }
+
+        // POST: Donations/ApproveReservation
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveReservation(int reservationId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var reservation = await _context.Reservations
+                .Include(r => r.Donation)
+                    .ThenInclude(d => d.User)
+                .Include(r => r.Donation)
+                    .ThenInclude(d => d.DonationStatus)
+                .Include(r => r.User)
+                .FirstOrDefaultAsync(r => r.ReservationID == reservationId);
+
+            if (reservation == null || reservation.Donation == null || reservation.Donation.User == null || reservation.Donation.User.UserID != currentUserId)
+            {
+                TempData["ErrorMessage"] = "Apenas o proprietário da doação pode aprovar uma reserva.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Mark this reservation as Confirmed
+            var confirmedStatus = await _context.ReservationsStatuses
+                .FirstOrDefaultAsync(rs => rs.Name == ReservationStatusNameEnum.Confirmed);
+            if (confirmedStatus != null)
+            {
+                reservation.ReservationStatus = confirmedStatus;
+                _context.Reservations.Update(reservation);
+            }
+
+            // Cancel other pending reservations for this same donation
+            var cancelledStatus = await _context.ReservationsStatuses
+                .FirstOrDefaultAsync(rs => rs.Name == ReservationStatusNameEnum.Cancelled);
+            if (cancelledStatus != null)
+            {
+                var otherReservations = await _context.Reservations
+                    .Where(r => r.Donation.DonationID == reservation.Donation.DonationID && r.ReservationID != reservationId && r.ReservationStatus.Name == ReservationStatusNameEnum.Pending)
+                    .ToListAsync();
+
+                foreach (var other in otherReservations)
+                {
+                    other.ReservationStatus = cancelledStatus;
+                    _context.Reservations.Update(other);
+                }
+            }
+
+            // Change donation status to Completed so it gets out from the feed!
+            var completedStatus = await _context.DonationStatuses
+                .FirstOrDefaultAsync(ds => ds.Name == DonationStatusNameEnum.Completed);
+            if (completedStatus == null)
+            {
+                completedStatus = new DonationStatus { Name = DonationStatusNameEnum.Completed };
+                _context.DonationStatuses.Add(completedStatus);
+                await _context.SaveChangesAsync();
+            }
+
+            reservation.Donation.DonationStatus = completedStatus;
+            _context.Donations.Update(reservation.Donation);
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"Reserva aprovada para {reservation.User?.Name ?? reservation.User?.Email}! A doação foi concluída e removida do feed.";
+
+            return RedirectToAction("Details", "Donations", new { id = reservation.Donation.DonationID });
         }
 
         // GET: Donations/Create
@@ -70,10 +371,40 @@ namespace EloDoacoes.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("DonationID,Title,Description,RegistrationDate")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection? images)
+        public async Task<IActionResult> Create([Bind("DonationID,Title,Description,RegistrationDate")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection images)
         {
+            // Validate user is authenticated
+            if (User?.Identity?.IsAuthenticated != true)
+            {
+                return RedirectToAction("Login", "Account", new { returnUrl = Url.Action("Create", "Donations") });
+            }
+
+            // Extract current user ID from claims
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return RedirectToAction("Login", "Account", new { returnUrl = Url.Action("Create", "Donations") });
+            }
+
             if (ModelState.IsValid)
             {
+                // Set the UserID to the current authenticated user
+                donation.UserID = currentUserId;
+
+                // Set RegistrationDate to current time if not provided
+                if (donation.RegistrationDate == default)
+                {
+                    donation.RegistrationDate = DateTime.UtcNow;
+                }
+
+                // Set default status to "Available"
+                var availableStatus = await _context.DonationStatuses
+                    .FirstOrDefaultAsync(ds => ds.Name == DonationStatusNameEnum.Available);
+                if (availableStatus != null)
+                {
+                    donation.DonationStatus = availableStatus;
+                }
+
                 if (categoryId.HasValue)
                 {
                     var cat = await _context.Categories.FindAsync(categoryId.Value);
@@ -105,7 +436,9 @@ namespace EloDoacoes.Controllers
                     }
                     await _context.SaveChangesAsync();
                 }
-                return RedirectToAction(nameof(Index));
+
+                TempData["SuccessMessage"] = "Doação criada com sucesso!";
+                return RedirectToAction(nameof(MyDonations));
             }
             ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name", categoryId);
             return View(donation);
@@ -137,7 +470,7 @@ namespace EloDoacoes.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("DonationID,Title,Description,RegistrationDate")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection? images, int[]? removeImageIds)
+        public async Task<IActionResult> Edit(int id, [Bind("DonationID,Title,Description,RegistrationDate")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection images, int[] removeImageIds)
         {
             if (id != donation.DonationID)
             {
@@ -197,7 +530,7 @@ namespace EloDoacoes.Controllers
                     }
 
                     await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToAction(nameof(MyDonations));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -244,7 +577,7 @@ namespace EloDoacoes.Controllers
                 _context.Donations.Remove(donation);
                 await _context.SaveChangesAsync();
             }
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(MyDonations));
         }
 
         private bool DonationExists(int id)

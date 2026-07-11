@@ -1,0 +1,44 @@
+@model EloDoacoes.ViewModels.DonationCardViewModel
+
+<div class="card h-100 shadow border-0 rounded-3 overflow-hidden donation-card">
+    <a asp-controller="Donations" asp-action="Details" asp-route-id="@Model.DonationId" class="text-decoration-none d-block">
+        @if (!string.IsNullOrEmpty(Model.ImageBase64) && Model.ImageBase64.Length > 20)
+        {
+            <img src="data:image/jpeg;base64,@Model.ImageBase64" class="card-img-top" style="height: 210px; object-fit: cover;" alt="@Model.Title" />
+        }
+        else
+        {
+            <img src="~/images/default-donation.svg" class="card-img-top p-4 bg-light" style="height: 210px; object-fit: contain;" alt="Sem imagem" />
+        }
+    </a>
+    <div class="card-body p-4 d-flex flex-column">
+        <h5 class="card-title fw-bold mb-2">
+            <a asp-controller="Donations" asp-action="Details" asp-route-id="@Model.DonationId" class="text-decoration-none text-primary">
+                @Model.Title
+            </a>
+        </h5>
+        <p class="card-text text-secondary flex-grow-1 mb-3">@Model.ShortDescription</p>
+        <p class="card-text mb-3">
+            <span class="badge bg-light text-dark border py-1 px-2">Status: <strong>@Model.DonationStatus</strong></span>
+            @if (Model.ReservationsCount > 0)
+            {
+                <span class="badge bg-warning text-dark border py-1 px-2 ms-1">@Model.ReservationsCount interessado(s) em reserva</span>
+            }
+        </p>
+
+        <div class="mt-auto pt-2 border-top">
+            @if (!Model.IsOwner)
+            {
+                <form asp-controller="Donations" asp-action="Reserve" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="donationId" value="@Model.DonationId" />
+                    <button type="submit" class="btn btn-primary w-100 py-2">Reservar Doação</button>
+                </form>
+            }
+            else
+            {
+                <span class="badge bg-secondary w-100 py-2 d-block">Sua doação</span>
+            }
+        </div>
+    </div>
+</div>

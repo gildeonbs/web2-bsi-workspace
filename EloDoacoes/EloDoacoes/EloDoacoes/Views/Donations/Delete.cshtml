@@ -1,7 +1,7 @@
-﻿@model EloDoacoes.Models.Donation
+@model EloDoacoes.Models.Donation
 
 @{
-    ViewData["Title"] = "Delete";
+    ViewData["Title"] = "Excluir Doação";
 }
 
 <h1>Excluir Doação</h1>
@@ -37,6 +37,6 @@
     <form asp-action="Delete">
         <input type="hidden" asp-for="DonationID" />
         <input type="submit" value="Excluir" class="btn btn-danger" /> |
-        <a asp-action="Index">Voltar para a Lista</a>
+        <a asp-action="MyDonations">Voltar para Minhas Doações</a>
     </form>
 </div>

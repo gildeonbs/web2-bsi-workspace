@@ -28,6 +28,13 @@ namespace EloDoacoes.Data
             modelBuilder.Entity<DonationStatus>().ToTable("donation_status");
             modelBuilder.Entity<Role>().ToTable("role");
             modelBuilder.Entity<DonationImage>().ToTable("donation_image");
+
+            // Configure the relationship between Donation and User explicitly
+            modelBuilder.Entity<Donation>()
+                .HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserID)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
