@@ -38,6 +38,12 @@
                     </div>
 
                     <div class="mb-3">
+                        <label asp-for="Phone" class="form-label fw-semibold text-dark">Telefone / WhatsApp</label>
+                        <input asp-for="Phone" id="phoneInput" class="form-control shadow-sm" placeholder="(11) 99999-9999" maxlength="15" />
+                        <span asp-validation-for="Phone" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
                         <label asp-for="Password" class="form-label fw-semibold text-dark">Senha</label>
                         <input asp-for="Password" type="password" class="form-control shadow-sm" placeholder="Crie uma senha segura" />
                         <div class="form-text small text-muted">Mínimo 8 caracteres, incluindo uma letra maiúscula, um número e um caractere especial.</div>
@@ -67,4 +73,28 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const phoneInput = document.getElementById('phoneInput');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function (e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length > 11) value = value.slice(0, 11);
+
+                    if (value.length > 2) {
+                        if (value.length <= 6) {
+                            value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+                        } else if (value.length <= 10) {
+                            value = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
+                        } else {
+                            value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+                        }
+                    } else if (value.length > 0) {
+                        value = `(${value}`;
+                    }
+                    e.target.value = value;
+                });
+            }
+        });
+    </script>
 }

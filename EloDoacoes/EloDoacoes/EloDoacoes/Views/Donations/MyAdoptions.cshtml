@@ -96,9 +96,21 @@
 
                             @if (donation.User != null)
                             {
+                                var donorNameDisplay = string.IsNullOrWhiteSpace(donation.User.Name)
+                                    ? (User?.Identity?.IsAuthenticated == true ? donation.User.Email : "Usuário Doador")
+                                    : donation.User.Name;
                                 <div class="bg-light p-2 rounded small mb-3">
-                                    <strong>Doador:</strong> @(string.IsNullOrWhiteSpace(donation.User.Name) ? donation.User.Email : donation.User.Name)<br />
-                                    <strong>Contato:</strong> <a href="mailto:@donation.User.Email">@donation.User.Email</a>
+                                    <strong>Doador:</strong> @donorNameDisplay<br />
+                                    @if (User?.Identity?.IsAuthenticated == true)
+                                    {
+                                        @if (!string.IsNullOrWhiteSpace(donation.User.Phone))
+                                        {
+                                            var rawPhone = new string(donation.User.Phone.Where(char.IsDigit).ToArray());
+                                            <strong>WhatsApp:</strong> 
+                                            <a href="https://wa.me/55@(rawPhone)" target="_blank" class="text-success fw-bold text-decoration-none">@donation.User.Phone</a><br />
+                                        }
+                                        <strong>E-mail:</strong> <a href="mailto:@donation.User.Email">@donation.User.Email</a>
+                                    }
                                 </div>
                             }
 

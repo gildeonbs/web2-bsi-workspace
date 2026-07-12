@@ -48,6 +48,13 @@ namespace EloDoacoes.Data
             }
 
             // ## --------------------------------------------------------------------------------------------------------------
+            // Ensure demo accounts have phone numbers if already seeded
+            var existingJohn = context.Users.FirstOrDefault(u => u.Email == "john.doe@example.com" && u.Phone == null);
+            if (existingJohn != null) existingJohn.Phone = "(79) 99671-1625";
+            var existingJane = context.Users.FirstOrDefault(u => u.Email == "jane.smith@example.com" && u.Phone == null);
+            if (existingJane != null) existingJane.Phone = "(79) 99671-1625";
+            context.SaveChanges();
+
             // Look for any users.
             if (context.Users.Any())
             {
@@ -57,8 +64,8 @@ namespace EloDoacoes.Data
             var standardRole = context.Roles.First(r => r.Name == RoleEnum.StandardUser);
             var users = new User[]
             {
-                new User{Name="John",Email="john.doe@example.com",PasswordHash="hashed_password_1",RegistrationDate=DateTime.Parse("2023-01-01"),Role=standardRole},
-                new User{Name="Jane",Email="jane.smith@example.com",PasswordHash="hashed_password_2",RegistrationDate=DateTime.Parse("2023-01-01"),Role=standardRole}
+                new User{Name="John",Email="john.doe@example.com",Phone="(79) 99671-1625",PasswordHash="hashed_password_1",RegistrationDate=DateTime.Parse("2023-01-01"),Role=standardRole},
+                new User{Name="Jane",Email="jane.smith@example.com",Phone="(79) 99671-1625",PasswordHash="hashed_password_2",RegistrationDate=DateTime.Parse("2023-01-01"),Role=standardRole}
             };
             foreach (User u in users)
             {

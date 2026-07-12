@@ -572,7 +572,7 @@ namespace EloDoacoes.Controllers
             {
                 Donation deletedDonation = new Donation();
                 await TryUpdateModelAsync(deletedDonation);
-                ModelState.AddModelError(string.Empty, "Não foi possível salvar as alterações. A doação foi excluída por outro usuário.");
+                ModelState.AddModelError(string.Empty, "Não foi possível salvar as alterações. A doação já foi excluída por você anteriormente.");
                 ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name", categoryId);
                 return View(deletedDonation);
             }
@@ -637,13 +637,13 @@ namespace EloDoacoes.Controllers
                     if (databaseEntry == null)
                     {
                         ModelState.AddModelError(string.Empty,
-                            "Não foi possível salvar as alterações. A doação foi excluída por outro usuário.");
+                            "Não foi possível salvar as alterações. A doação já foi excluída por você anteriormente.");
                     }
                     else
                     {
                         var databaseValues = (Donation)databaseEntry.ToObject();
 
-                        ModelState.AddModelError(string.Empty, "O registro que você tentou editar foi modificado por outro usuário após você ter carregado a página. A operação de edição foi cancelada e os valores atuais do banco de dados foram carregados. Se você ainda deseja editar este registro, clique no botão Salvar Alterações novamente.");
+                        ModelState.AddModelError(string.Empty, "O registro que você tentou editar foi modificado após você ter carregado a página. A operação de edição foi cancelada e os valores atuais do banco de dados foram carregados. Se você ainda deseja editar este registro, clique no botão Salvar Alterações novamente.");
                         existingToUpdate.RowVersion = (byte[])databaseValues.RowVersion;
                         ModelState.Remove("RowVersion");
                     }

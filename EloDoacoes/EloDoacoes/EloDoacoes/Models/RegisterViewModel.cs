@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 public class RegisterViewModel
 {
@@ -13,6 +13,12 @@ public class RegisterViewModel
     [EmailAddress(ErrorMessage = "Informe um endereço de e-mail válido.")]
     [RegularExpression(@"^(?=.{5,254}$)[A-Za-z0-9]+[A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$", ErrorMessage = "Formato de e-mail inválido.")]
     public string Email { get; set; }
+
+    // Telefone (Formato Brasileiro): (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+    [Required(ErrorMessage = "O telefone / WhatsApp é obrigatório.")]
+    [Display(Name = "Telefone / WhatsApp")]
+    [RegularExpression(@"^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$", ErrorMessage = "Informe um telefone válido no formato (99) 99999-9999.")]
+    public string Phone { get; set; }
 
     // Password: require between 8 and 100 chars, at least one uppercase, one digit and one special char.
     [Required(ErrorMessage = "A senha é obrigatória.")]
