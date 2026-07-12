@@ -137,15 +137,33 @@
                             <p class="card-text text-secondary flex-grow-1 mb-3">@item.Description</p>
 
                             <div class="mt-auto pt-3 border-top d-flex gap-2">
-                                <a asp-action="Edit" asp-route-id="@item.DonationID" class="btn btn-outline-warning flex-grow-1">
-                                    Editar
-                                </a>
+                                @if (item.DonationStatus != null && item.DonationStatus.Name == EloDoacoes.Models.DonationStatusNameEnum.Completed)
+                                {
+                                    <button type="button" class="btn btn-outline-secondary flex-grow-1" disabled title="Doação concluída não pode ser editada">
+                                        <i class="bi bi-lock-fill me-1"></i>Editar
+                                    </button>
+                                }
+                                else
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.DonationID" class="btn btn-outline-warning flex-grow-1">
+                                        Editar
+                                    </a>
+                                }
                                 <a asp-action="Details" asp-route-id="@item.DonationID" class="btn btn-outline-primary flex-grow-1">
                                     Detalhes
                                 </a>
-                                <a asp-action="Delete" asp-route-id="@item.DonationID" class="btn btn-outline-danger">
-                                    Excluir
-                                </a>
+                                @if (item.DonationStatus != null && item.DonationStatus.Name == EloDoacoes.Models.DonationStatusNameEnum.Completed)
+                                {
+                                    <button type="button" class="btn btn-outline-secondary" disabled title="Doação concluída não pode ser excluída">
+                                        <i class="bi bi-lock-fill"></i>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <a asp-action="Delete" asp-route-id="@item.DonationID" class="btn btn-outline-danger">
+                                        Excluir
+                                    </a>
+                                }
                             </div>
                         </div>
                     </div>

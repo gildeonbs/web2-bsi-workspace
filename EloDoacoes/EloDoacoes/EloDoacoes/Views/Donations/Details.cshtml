@@ -9,6 +9,7 @@
     int.TryParse(currentUserIdClaim, out int currentUserId);
     bool isOwner = Model.User != null && Model.User.UserID == currentUserId;
     bool isAvailable = Model.DonationStatus != null && (Model.DonationStatus.Name == DonationStatusNameEnum.Available || Model.DonationStatus.Name == DonationStatusNameEnum.Reserved);
+    bool isCompleted = Model.DonationStatus != null && Model.DonationStatus.Name == DonationStatusNameEnum.Completed;
     bool hasReserved = Model.Reservations != null && Model.Reservations.Any(r => r.User != null && r.User.UserID == currentUserId && r.ReservationStatus != null && (r.ReservationStatus.Name == ReservationStatusNameEnum.Pending || r.ReservationStatus.Name == ReservationStatusNameEnum.Confirmed));
 }
 
@@ -22,6 +23,21 @@
             Voltar ao Feed
         </a>
     </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    }
 
     <div class="row g-5">
         @* Left Column: Photo Gallery *@
@@ -145,13 +161,31 @@
                     @if (isOwner)
                     {
                         <div class="alert alert-secondary mb-3 text-center">Esta é uma doação cadastrada por você.</div>
+                        @if (isCompleted)
+                        {
+                            <div class="alert alert-info mb-3 text-center small">
+                                <i class="bi bi-lock-fill me-1"></i> Esta doação foi <strong>Concluída</strong> e as opções de edição e exclusão estão bloqueadas.
+                            </div>
+                        }
                         <div class="d-flex flex-wrap gap-2 mb-4">
-                            <a asp-controller="Donations" asp-action="Edit" asp-route-id="@Model.DonationID" class="btn btn-warning flex-grow-1 py-2 fw-bold">
-                                Editar Doação
-                            </a>
-                            <a asp-controller="Donations" asp-action="Delete" asp-route-id="@Model.DonationID" class="btn btn-danger flex-grow-1 py-2 fw-bold">
-                                Excluir Doação
-                            </a>
+                            @if (isCompleted)
+                            {
+                                <button type="button" class="btn btn-secondary flex-grow-1 py-2 fw-bold" disabled title="Doação concluída não pode ser editada">
+                                    <i class="bi bi-lock-fill me-1"></i> Editar Doação
+                                </button>
+                                <button type="button" class="btn btn-secondary flex-grow-1 py-2 fw-bold" disabled title="Doação concluída não pode ser excluída">
+                                    <i class="bi bi-lock-fill me-1"></i> Excluir Doação
+                                </button>
+                            }
+                            else
+                            {
+                                <a asp-controller="Donations" asp-action="Edit" asp-route-id="@Model.DonationID" class="btn btn-warning flex-grow-1 py-2 fw-bold">
+                                    Editar Doação
+                                </a>
+                                <a asp-controller="Donations" asp-action="Delete" asp-route-id="@Model.DonationID" class="btn btn-danger flex-grow-1 py-2 fw-bold">
+                                    Excluir Doação
+                                </a>
+                            }
                             @if (isAvailable)
                             {
                                 <form asp-controller="Donations" asp-action="CompleteDonation" method="post" class="flex-grow-1">
