@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace EloDoacoes.Models
 {
@@ -7,5 +7,6 @@ namespace EloDoacoes.Models
     {
         public int CategoryID { get; set; }
         public string Name { get; set; }
+        public bool IsActive { get; set; } = true;
     }
 }
