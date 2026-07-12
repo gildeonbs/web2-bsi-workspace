@@ -4,65 +4,87 @@
     ViewData["Title"] = "Editar Doação";
 }
 
-<h1>Editar Doação</h1>
-
-<h4>Doação</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit" method="post" enctype="multipart/form-data">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="DonationID" />
-            <div class="form-group">
-                <label asp-for="Title" class="control-label">Título</label>
-                <input asp-for="Title" class="form-control" />
-                <span asp-validation-for="Title" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label">Descrição</label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label class="control-label">Categoria</label>
-                @Html.DropDownList("categoryId", (SelectList)ViewBag.CategoryList, "-- Selecionar --", new { @class = "form-control" })
-            </div>
-            <div class="form-group">
-                <label asp-for="RegistrationDate" class="control-label">Data de Registro</label>
-                <input asp-for="RegistrationDate" class="form-control" />
-                <span asp-validation-for="RegistrationDate" class="text-danger"></span>
-            </div>
-            <div class="form-group mt-3">
-                <label class="control-label">Adicionar Imagens</label>
-                <input type="file" name="images" accept="image/*" multiple class="form-control" />
-            </div>
-            @if (Model.DonationImages != null && Model.DonationImages.Any())
-            {
-                <div class="form-group mt-3">
-                    <label class="control-label">Imagens anexadas</label>
-                    <div class="d-flex flex-wrap">
-                        @foreach (var img in Model.DonationImages)
-                        {
-                            <div class="me-2 mb-2 text-center">
-                                <img src="data:@img.ContentType;base64,@System.Convert.ToBase64String(img.ImageData)" style="width:100px;height:100px;object-fit:cover;display:block;border:1px solid #ddd;padding:2px;" />
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="removeImageIds" value="@img.DonationImageId" id="rm@img.DonationImageId" />
-                                    <label class="form-check-label" for="rm@img.DonationImageId">Remover</label>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-            <div class="form-group mt-3">
-                <input type="submit" value="Salvar" class="btn btn-primary" />
-            </div>
-        </form>
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold text-primary mb-1">Editar Doação</h1>
+            <p class="text-secondary mb-0">Atualize os detalhes da doação ou gerencie suas imagens.</p>
+        </div>
+        <a asp-action="MyDonations" class="btn btn-outline-primary">
+            Voltar para Minhas Doações
+        </a>
     </div>
-</div>
 
-<div>
-    <a asp-action="MyDonations">Voltar para Minhas Doações</a>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3 p-4 p-md-5">
+                <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <input type="hidden" asp-for="DonationID" />
+
+                    <div class="mb-3">
+                        <label asp-for="Title" class="form-label fw-semibold text-dark">Título da Doação</label>
+                        <input asp-for="Title" class="form-control shadow-sm" />
+                        <span asp-validation-for="Title" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-semibold text-dark">Descrição Completa</label>
+                        <textarea asp-for="Description" class="form-control shadow-sm" rows="4"></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Categoria</label>
+                        @Html.DropDownList("categoryId", (SelectList)ViewBag.CategoryList, "-- Selecionar Categoria --", new { @class = "form-control shadow-sm" })
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-dark">Adicionar Novas Imagens (Opcional)</label>
+                        <input type="file" name="images" accept="image/*" multiple class="form-control shadow-sm" />
+                    </div>
+
+                    @if (Model.DonationImages != null && Model.DonationImages.Any())
+                    {
+                        <div class="mb-4 p-3 bg-light rounded-3 border">
+                            <label class="form-label fw-semibold text-dark mb-3">Imagens Atuais (Marque para remover)</label>
+                            <div class="row g-3">
+                                @foreach (var img in Model.DonationImages)
+                                {
+                                    <div class="col-6 col-sm-4 col-md-3 text-center">
+                                        <div class="card shadow-sm border-0 rounded overflow-hidden p-1 bg-white">
+                                            <img src="data:@img.ContentType;base64,@System.Convert.ToBase64String(img.ImageData)" class="img-fluid rounded mb-2" style="height: 100px; object-fit: cover; width: 100%;" alt="Imagem cadastrada" />
+                                            <div class="d-flex align-items-center justify-content-center py-2">
+                                                <input type="checkbox" name="removeImageIds" value="@img.DonationImageId" id="rm_@img.DonationImageId" style="position: static !important; margin: 0 6px 0 0 !important; cursor: pointer;" />
+                                                <label class="small text-danger fw-bold mb-0" for="rm_@img.DonationImageId" style="cursor: pointer;">Remover</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <a asp-action="MyDonations" class="btn btn-outline-secondary px-4">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                            Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {

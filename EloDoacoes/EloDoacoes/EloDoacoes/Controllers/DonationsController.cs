@@ -217,6 +217,19 @@ namespace EloDoacoes.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
+            // Prevent duplicate reservations from the same user on this donation
+            bool alreadyReserved = await _context.Reservations
+                .AnyAsync(r => r.Donation.DonationID == donationId
+                            && r.User != null && r.User.UserID == currentUserId
+                            && r.ReservationStatus != null
+                            && (r.ReservationStatus.Name == ReservationStatusNameEnum.Pending || r.ReservationStatus.Name == ReservationStatusNameEnum.Confirmed));
+
+            if (alreadyReserved)
+            {
+                TempData["ErrorMessage"] = "Você já possui uma reserva ativa para esta doação.";
+                return RedirectToAction("Details", new { id = donationId });
+            }
+
             // Create reservation
             var reservationStatus = await _context.ReservationsStatuses.FirstOrDefaultAsync(rs => rs.Name == ReservationStatusNameEnum.Pending);
             var interestedUser = await _context.Users.FirstOrDefaultAsync(u => u.UserID == currentUserId);
@@ -359,6 +372,61 @@ namespace EloDoacoes.Controllers
             return RedirectToAction("Details", "Donations", new { id = reservation.Donation.DonationID });
         }
 
+        // POST: Donations/CompleteDonation
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompleteDonation(int donationId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var donation = await _context.Donations
+                .Include(d => d.User)
+                .Include(d => d.DonationStatus)
+                .FirstOrDefaultAsync(d => d.DonationID == donationId && d.User.UserID == currentUserId);
+
+            if (donation == null)
+            {
+                return NotFound();
+            }
+
+            var completedStatus = await _context.DonationStatuses
+                .FirstOrDefaultAsync(ds => ds.Name == DonationStatusNameEnum.Completed);
+            if (completedStatus == null)
+            {
+                completedStatus = new DonationStatus { Name = DonationStatusNameEnum.Completed };
+                _context.DonationStatuses.Add(completedStatus);
+                await _context.SaveChangesAsync();
+            }
+
+            donation.DonationStatus = completedStatus;
+            _context.Donations.Update(donation);
+
+            // Whenever donation status changes to Completed, update pending reservations to Confirmed
+            var confirmedStatus = await _context.ReservationsStatuses
+                .FirstOrDefaultAsync(rs => rs.Name == ReservationStatusNameEnum.Confirmed);
+            if (confirmedStatus != null)
+            {
+                var pendingReservations = await _context.Reservations
+                    .Where(r => r.Donation.DonationID == donationId && r.ReservationStatus.Name == ReservationStatusNameEnum.Pending)
+                    .ToListAsync();
+
+                foreach (var res in pendingReservations)
+                {
+                    res.ReservationStatus = confirmedStatus;
+                    _context.Reservations.Update(res);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Doação marcada como Concluída! As reservas pendentes foram atualizadas para Confirmadas.";
+
+            return RedirectToAction("Details", new { id = donationId });
+        }
+
         // GET: Donations/Create
         public IActionResult Create()
         {
@@ -371,7 +439,7 @@ namespace EloDoacoes.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("DonationID,Title,Description,RegistrationDate")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection images)
+        public async Task<IActionResult> Create([Bind("DonationID,Title,Description")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection images)
         {
             // Validate user is authenticated
             if (User?.Identity?.IsAuthenticated != true)
@@ -391,11 +459,8 @@ namespace EloDoacoes.Controllers
                 // Set the UserID to the current authenticated user
                 donation.UserID = currentUserId;
 
-                // Set RegistrationDate to current time if not provided
-                if (donation.RegistrationDate == default)
-                {
-                    donation.RegistrationDate = DateTime.UtcNow;
-                }
+                // Set RegistrationDate automatically to current local time
+                donation.RegistrationDate = DateTime.Now;
 
                 // Set default status to "Available"
                 var availableStatus = await _context.DonationStatuses
@@ -470,7 +535,7 @@ namespace EloDoacoes.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("DonationID,Title,Description,RegistrationDate")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection images, int[] removeImageIds)
+        public async Task<IActionResult> Edit(int id, [Bind("DonationID,Title,Description")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection images, int[] removeImageIds)
         {
             if (id != donation.DonationID)
             {
@@ -486,7 +551,6 @@ namespace EloDoacoes.Controllers
 
                     existing.Title = donation.Title;
                     existing.Description = donation.Description;
-                    existing.RegistrationDate = donation.RegistrationDate;
 
                     if (categoryId.HasValue)
                     {
@@ -557,10 +621,19 @@ namespace EloDoacoes.Controllers
             }
 
             var donation = await _context.Donations
+                .Include(d => d.Category)
+                .Include(d => d.User)
                 .FirstOrDefaultAsync(m => m.DonationID == id);
             if (donation == null)
             {
                 return NotFound();
+            }
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId) || donation.User == null || donation.User.UserID != currentUserId)
+            {
+                TempData["ErrorMessage"] = "Você não tem permissão para excluir esta doação.";
+                return RedirectToAction("Index", "Home");
             }
 
             return View(donation);
@@ -571,11 +644,39 @@ namespace EloDoacoes.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var donation = await _context.Donations.FindAsync(id);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var donation = await _context.Donations
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d => d.DonationID == id && d.User.UserID == currentUserId);
+
             if (donation != null)
             {
+                // Remove dependent reservations first to prevent SQL FK constraint exception
+                var reservations = await _context.Reservations
+                    .Where(r => r.Donation.DonationID == donation.DonationID)
+                    .ToListAsync();
+                if (reservations.Any())
+                {
+                    _context.Reservations.RemoveRange(reservations);
+                }
+
+                // Remove dependent images first
+                var images = await _context.DonationImages
+                    .Where(di => di.DonationId == donation.DonationID)
+                    .ToListAsync();
+                if (images.Any())
+                {
+                    _context.DonationImages.RemoveRange(images);
+                }
+
                 _context.Donations.Remove(donation);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Doação excluída com sucesso!";
             }
             return RedirectToAction(nameof(MyDonations));
         }

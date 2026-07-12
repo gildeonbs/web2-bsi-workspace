@@ -1,62 +1,98 @@
-﻿@using System.Linq
+@using System.Linq
 @model IEnumerable<EloDoacoes.Models.Donation>
 
 @{
-    ViewData["Title"] = "Minhas Doações";
+    ViewData["Title"] = "Catálogo de Doações";
 }
 
-@{
-    var defaultImgUrl = Url.Content("~/images/default-donation.svg");
-}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold text-primary mb-1">Catálogo de Doações</h1>
+            <p class="text-secondary mb-0">Visualize e gerencie todas as doações cadastradas.</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary shadow-sm">
+            Criar Nova Doação
+        </a>
+    </div>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>@ViewData["Title"]</h1>
-</div>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    }
 
-<p class="mb-4">
-    <a asp-action="Create" class="text-decoration-none">Criar Nova Doação</a>
-</p>
-
-<div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-    @foreach (var item in Model) {
-        <div class="col mb-4">
-            <div class="card h-100 shadow-sm border-0 rounded-3 p-0" style="overflow:hidden;">
-
-                @{ 
-                    var firstImg = (item.DonationImages != null && item.DonationImages.Any())
-                        ? item.DonationImages.OrderBy(i => i.DisplayOrder).FirstOrDefault()
-                        : null;
-                }
-
-                <div style="height: 160px; background-color: #d1d1d1; display: flex; align-items: center; justify-content: center; border-radius: 0.375rem 0.375rem 0 0; overflow: hidden;">
-                    <a asp-action="Details" asp-route-id="@item.DonationID" class="d-flex align-items-center justify-content-center" style="display:block; width:100%; height:100%;">
-                        @if (firstImg != null && firstImg.ImageData != null && firstImg.ImageData.Length > 0)
-                        {
-                            <img src="data:@firstImg.ContentType;base64,@System.Convert.ToBase64String(firstImg.ImageData)" alt="@firstImg.FileName" style="width: 100%; height: 100%; object-fit: cover; display:block;" />
-                        }
-                        else
-                        {
-                            <img src="@defaultImgUrl" alt="Sem imagem" style="width:64px; height:64px; object-fit:contain; display:block;" />
-                        }
-                    </a>
-                </div>
-
-                <div class="card-body">
-                    <h6 class="card-title fw-bold mb-1">@Html.DisplayFor(modelItem => item.Title)</h6>
-                    <p class="card-text small mb-1 text-truncate">@Html.DisplayFor(modelItem => item.Description)</p>
-                    <p class="card-text small text-dark">
-                        Data de registro: @item.RegistrationDate.ToShortDateString()
-                    </p>
-                </div>
-
-                <div class="card-footer bg-white border-top-0 pt-0 text-center pb-3">
-                    <hr class="mt-0 mb-2" style="border-top: 1px solid #ccc;">
-                    <a asp-action="Edit" asp-route-id="@item.DonationID" class="text-decoration-none">Editar</a> |
-                    <a asp-action="Details" asp-route-id="@item.DonationID" class="text-decoration-none">Detalhes</a> |
-                    <a asp-action="Delete" asp-route-id="@item.DonationID" class="text-decoration-none">Excluir</a>
-                </div>
-
+    @if (Model == null || !Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-3 text-center p-5 my-4">
+            <div class="py-4">
+                <h4 class="fw-bold text-secondary mb-3">Nenhuma doação cadastrada</h4>
+                <p class="text-muted mb-4">Ainda não há itens registrados nesta lista. Clique abaixo para cadastrar a primeira doação!</p>
+                <a asp-action="Create" class="btn btn-primary btn-lg px-4">
+                    Criar Nova Doação
+                </a>
             </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4 mb-5 justify-content-start">
+            @foreach (var item in Model)
+            {
+                var firstImg = (item.DonationImages != null && item.DonationImages.Any())
+                    ? item.DonationImages.OrderBy(i => i.DisplayOrder).FirstOrDefault()
+                    : null;
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card h-100 shadow border-0 rounded-3 overflow-hidden donation-card">
+                        <a asp-action="Details" asp-route-id="@item.DonationID" class="text-decoration-none d-block">
+                            @if (firstImg != null && firstImg.ImageData != null && firstImg.ImageData.Length > 0)
+                            {
+                                <img src="data:@firstImg.ContentType;base64,@System.Convert.ToBase64String(firstImg.ImageData)" class="card-img-top" style="height: 210px; object-fit: cover;" alt="@firstImg.FileName" />
+                            }
+                            else
+                            {
+                                <img src="~/images/default-donation.svg" class="card-img-top p-4 bg-light" style="height: 210px; object-fit: contain;" alt="Sem imagem" />
+                            }
+                        </a>
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-primary">@(item.Category?.Name ?? "Geral")</span>
+                                <span class="badge bg-light text-dark border">@item.RegistrationDate.ToShortDateString()</span>
+                            </div>
+
+                            <h5 class="card-title fw-bold mb-2">
+                                <a asp-action="Details" asp-route-id="@item.DonationID" class="text-decoration-none text-primary">
+                                    @item.Title
+                                </a>
+                            </h5>
+
+                            <p class="card-text text-secondary flex-grow-1 mb-3">@item.Description</p>
+
+                            <div class="mt-auto pt-3 border-top d-flex gap-2">
+                                <a asp-action="Edit" asp-route-id="@item.DonationID" class="btn btn-outline-warning flex-grow-1">
+                                    Editar
+                                </a>
+                                <a asp-action="Details" asp-route-id="@item.DonationID" class="btn btn-outline-primary flex-grow-1">
+                                    Detalhes
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.DonationID" class="btn btn-outline-danger">
+                                    Excluir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     }
 </div>

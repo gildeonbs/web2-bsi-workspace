@@ -1,48 +1,67 @@
-﻿@model LoginViewModel
+@model LoginViewModel
 
-<h2>Login</h2>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+@{
+    ViewData["Title"] = "Entrar";
 }
 
-@if (ViewData.ModelState.ErrorCount > 0)
-{
-    <div class="alert alert-danger">Por favor verifique suas credenciais e tente novamente.</div>
-}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-3 p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold text-primary mb-1">Acessar Conta</h2>
+                    <p class="text-secondary small mb-0">Digite suas credenciais para acessar a plataforma</p>
+                </div>
 
-<form asp-action="Login" method="post" novalidate>
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                        @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                    </div>
+                }
 
-    <div class="form-group">
-        <label asp-for="Email">Email</label>
-        <input asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
+                @if (ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                        Por favor, verifique suas credenciais e tente novamente.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                    </div>
+                }
+
+                <form asp-action="Login" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-semibold text-dark">E-mail</label>
+                        <input asp-for="Email" class="form-control shadow-sm" placeholder="exemplo@dominio.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label fw-semibold text-dark">Senha</label>
+                        <input asp-for="Password" type="password" class="form-control shadow-sm" placeholder="Digite sua senha" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm">Entrar</button>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="text-center small">
+                        <a asp-action="ForgotPassword" class="text-decoration-none text-primary fw-semibold">Esqueci minha senha</a>
+                        <div class="mt-2">
+                            Ainda não possui cadastro? <a asp-action="Register" class="text-decoration-none text-primary fw-bold">Cadastre-se agora</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-
-    <div class="form-group">
-        <label asp-for="Password">Senha</label>
-        <input asp-for="Password" class="form-control" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-
-    <br />
-
-    <button type="submit" class="btn btn-primary">Entrar</button>
-
-    <hr />
-
-    <div class="text-center">
-        <a asp-action="ForgotPassword">Esqueci minha senha</a>
-
-        <br /><br />
-
-        Ainda não possui cadastro? <a asp-action="Register">Cadastre-se</a>
-    </div>
-
-</form>
+</div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

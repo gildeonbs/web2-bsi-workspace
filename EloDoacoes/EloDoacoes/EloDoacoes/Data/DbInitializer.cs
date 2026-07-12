@@ -52,31 +52,40 @@ namespace EloDoacoes.Data
             var userJane = users.First(u => u.Name == "Jane");
 
             // ## --------------------------------------------------------------------------------------------------------------
-            // Look for any categories.
-            if (context.Categories.Any())
+            // Ensure a comprehensive list of categories exists in the database
+            var categoryNames = new[]
             {
-                return;   // DB has been seeded
-            }
-
-            var categories = new Category[]
-            {
-                new Category{Name="Livros"},
-                new Category{Name="Móveis"},
-                new Category{Name="Roupas"},
-                new Category{Name="Alimentos"},
-                new Category{Name="Eletrônicos"}
+                "Livros",
+                "Móveis",
+                "Roupas",
+                "Alimentos",
+                "Eletrônicos",
+                "Brinquedos",
+                "Eletrodomésticos",
+                "Higiene e Limpeza",
+                "Material Escolar",
+                "Calçados",
+                "Esporte e Lazer",
+                "Ferramentas",
+                "Artigos para Bebês",
+                "Saúde e Bem-estar",
+                "Outros"
             };
-            foreach (Category c in categories)
+
+            foreach (var catName in categoryNames)
             {
-                context.Categories.Add(c);
+                if (!context.Categories.Any(c => c.Name == catName))
+                {
+                    context.Categories.Add(new Category { Name = catName });
+                }
             }
             context.SaveChanges();
 
-                var donationCategoryBook = categories.First(c => c.Name == "Livros");
-                var donationCategoryFurniture = categories.First(c => c.Name == "Móveis");
-                var donationCategoryClothing = categories.First(c => c.Name == "Roupas");
-                var donationCategoryFood = categories.First(c => c.Name == "Alimentos");
-                var donationCategoryElectronics = categories.First(c => c.Name == "Eletrônicos");
+            var donationCategoryBook = context.Categories.First(c => c.Name == "Livros");
+            var donationCategoryFurniture = context.Categories.First(c => c.Name == "Móveis");
+            var donationCategoryClothing = context.Categories.First(c => c.Name == "Roupas");
+            var donationCategoryFood = context.Categories.First(c => c.Name == "Alimentos");
+            var donationCategoryElectronics = context.Categories.First(c => c.Name == "Eletrônicos");
 
             // ## --------------------------------------------------------------------------------------------------------------
             // Ensure all DonationStatus enum values exist in the database

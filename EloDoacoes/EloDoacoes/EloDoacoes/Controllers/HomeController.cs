@@ -87,6 +87,7 @@ namespace EloDoacoes.Controllers
 
                 int pendingCount = d.Reservations?.Count(r => r.ReservationStatus != null && r.ReservationStatus.Name == ReservationStatusNameEnum.Pending) ?? 0;
                 string badgeText = pendingCount > 0 ? $"{pendingCount} interessado(s)" : string.Empty;
+                bool hasUserReserved = currentUserId.HasValue && d.Reservations != null && d.Reservations.Any(r => r.User != null && r.User.UserID == currentUserId.Value && r.ReservationStatus != null && (r.ReservationStatus.Name == ReservationStatusNameEnum.Pending || r.ReservationStatus.Name == ReservationStatusNameEnum.Confirmed));
 
                 items.Add(new DonationCardViewModel
                 {
@@ -99,7 +100,8 @@ namespace EloDoacoes.Controllers
                     DonationStatus = d.DonationStatus?.Name.ToString() ?? "Available",
                     IsOwner = (currentUserId.HasValue && d.User != null && d.User.UserID == currentUserId.Value),
                     ReservationsCount = pendingCount,
-                    ReservationStatusBadge = badgeText
+                    ReservationStatusBadge = badgeText,
+                    HasUserReserved = hasUserReserved
                 });
             }
 

@@ -12,5 +12,6 @@ namespace EloDoacoes.ViewModels
         public bool IsOwner { get; set; }
         public int ReservationsCount { get; set; }
         public string ReservationStatusBadge { get; set; } = string.Empty;
+        public bool HasUserReserved { get; set; }
     }
 }

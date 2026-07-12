@@ -1,25 +1,48 @@
-﻿@{
+@{
     ViewData["Title"] = "Sobre a Elo Doações";
 }
 
-<div class="jumbotron">
-    <h1>@ViewData["Title"]</h1>
-    <p>
-        Elo Doações é um projeto acadêmico para gerenciamento de doações, onde os usuários podem cadastrar e acompanhar suas doações, bem como visualizar doações disponíveis para adoção. O objetivo é proporcionar uma plataforma simples e funcional para conectar doadores e beneficiários, promovendo a solidariedade e o apoio mútuo.
-    </p>        
-</div>
-<div class="row">
-    <div class="col-md-5">
-        <h2>Contexto</h2>
-        <p>
-            Elo Doações é uma aplicação acadêmica desenvolvida com ASP.NET Core MVC e Entity Framework Core para a disciplina
-            Programação Web II, do curso de Bacharelado em Sistemas de Informação do
-            <a href="https://www.ifs.edu.br/" target="_blank" rel="noopener noreferrer">Instituto Federal de Sergipe</a>.
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold text-primary mb-1">Sobre a Elo Doações</h1>
+            <p class="text-secondary mb-0">Conheça o propósito e a arquitetura acadêmica do nosso projeto.</p>
+        </div>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary">
+            Voltar ao Feed
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 p-4 p-md-5 mb-5 bg-light">
+        <h3 class="fw-bold text-dark mb-3">Conectando Doadores e Beneficiários</h3>
+        <p class="lead text-secondary mb-0">
+            Elo Doações é um projeto acadêmico para gerenciamento de doações, onde os usuários podem cadastrar e acompanhar suas doações, bem como visualizar itens disponíveis para adoção e reserva. O objetivo principal é proporcionar uma plataforma simples, bonita e funcional que promova a solidariedade e o apoio mútuo.
         </p>
     </div>
-    <div class="col-md-5">
-        <h2>Baixe o projeto</h2>
-        <p>O código-fonte do projeto está disponível no GitHub.</p>
-        <p><a class="btn btn-primary" href="https://github.com/gildeonbs/web2-bsi-workspace/tree/main/EloDoacoes/EloDoacoes">Ver código-fonte no GitHub &raquo;</a></p>
+
+    <div class="row g-4">
+        <div class="col-12 col-md-6">
+            <div class="card h-100 border-0 shadow-sm rounded-3 p-4">
+                <h4 class="fw-bold text-primary mb-3"><i class="bi bi-mortarboard-fill me-2"></i>Contexto Acadêmico</h4>
+                <p class="text-secondary flex-grow-1">
+                    Esta aplicação foi desenvolvida utilizando ASP.NET 5 Core MVC, C# e Entity Framework Core como parte prática da disciplina de Programação Web II do curso de Bacharelado em Sistemas de Informação no
+                    <a href="https://www.ifs.edu.br/" target="_blank" rel="noopener noreferrer" class="text-primary fw-semibold">Instituto Federal de Sergipe (IFS)</a>.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <div class="card h-100 border-0 shadow-sm rounded-3 p-4 d-flex flex-column">
+                <h4 class="fw-bold text-primary mb-3"><i class="bi bi-github me-2"></i>Código-Fonte Aberto</h4>
+                <p class="text-secondary flex-grow-1">
+                    Todo o código-fonte do projeto, estrutura do banco de dados e arquivos de modelo estão devidamente versionados e acessíveis no repositório do GitHub.
+                </p>
+                <div>
+                    <a class="btn btn-primary px-4 fw-bold shadow-sm" href="https://github.com/gildeonbs/web2-bsi-workspace/tree/main/EloDoacoes/EloDoacoes" target="_blank" rel="noopener noreferrer">
+                        Ver Código no GitHub &raquo;
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
