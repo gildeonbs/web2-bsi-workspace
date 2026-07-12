@@ -1,4 +1,5 @@
 using EloDoacoes.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 
@@ -12,6 +13,20 @@ namespace EloDoacoes.Data
             // Commented out so user data and donations are permanently preserved across restarts:
             // context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
+
+            // Ensure RowVersion concurrency token column exists on donation table in SQL Server
+            try
+            {
+                context.Database.ExecuteSqlRaw(@"
+                    IF NOT EXISTS (
+                        SELECT * FROM sys.columns 
+                        WHERE object_id = OBJECT_ID(N'donation') AND name = 'RowVersion'
+                    )
+                    BEGIN
+                        ALTER TABLE [donation] ADD [RowVersion] rowversion NOT NULL;
+                    END");
+            }
+            catch { }
 
             // ## --------------------------------------------------------------------------------------------------------------
             // Look for any roles.

@@ -29,6 +29,7 @@
                 <form asp-action="Edit" method="post" enctype="multipart/form-data">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                     <input type="hidden" asp-for="DonationID" />
+                    <input type="hidden" asp-for="RowVersion" />
 
                     <div class="mb-3">
                         <label asp-for="Title" class="form-label fw-semibold text-dark">Título da Doação</label>

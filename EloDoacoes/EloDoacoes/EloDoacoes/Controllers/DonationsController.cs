@@ -558,31 +558,38 @@ namespace EloDoacoes.Controllers
         }
 
         // POST: Donations/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // Strict overposting protection using Read and Update pattern with TryUpdateModelAsync
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("DonationID,Title,Description")] Donation donation, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection images, int[] removeImageIds)
+        public async Task<IActionResult> Edit(int id, int? categoryId, Microsoft.AspNetCore.Http.IFormFileCollection images, int[] removeImageIds, byte[] rowVersion)
         {
-            if (id != donation.DonationID)
+            var existingToUpdate = await _context.Donations
+                .Include(d => d.DonationImages)
+                .Include(d => d.Category)
+                .FirstOrDefaultAsync(d => d.DonationID == id);
+
+            if (existingToUpdate == null)
             {
-                return NotFound();
+                Donation deletedDonation = new Donation();
+                await TryUpdateModelAsync(deletedDonation);
+                ModelState.AddModelError(string.Empty, "Não foi possível salvar as alterações. A doação foi excluída por outro usuário.");
+                ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name", categoryId);
+                return View(deletedDonation);
             }
 
-            if (ModelState.IsValid)
+            _context.Entry(existingToUpdate).Property("RowVersion").OriginalValue = rowVersion;
+
+            if (await TryUpdateModelAsync<Donation>(
+                existingToUpdate,
+                "",
+                d => d.Title, d => d.Description))
             {
                 try
                 {
-                    var existing = await _context.Donations.Include(d => d.DonationImages).FirstOrDefaultAsync(d => d.DonationID == id);
-                    if (existing == null) return NotFound();
-
-                    existing.Title = donation.Title;
-                    existing.Description = donation.Description;
-
                     if (categoryId.HasValue)
                     {
                         var cat = await _context.Categories.FindAsync(categoryId.Value);
-                        existing.Category = cat;
+                        existingToUpdate.Category = cat;
                     }
 
                     // remove selected images
@@ -591,7 +598,7 @@ namespace EloDoacoes.Controllers
                         foreach (var imgId in removeImageIds)
                         {
                             var img = await _context.DonationImages.FindAsync(imgId);
-                            if (img != null && img.DonationId == existing.DonationID)
+                            if (img != null && img.DonationId == existingToUpdate.DonationID)
                             {
                                 _context.DonationImages.Remove(img);
                             }
@@ -609,7 +616,7 @@ namespace EloDoacoes.Controllers
                                 await file.CopyToAsync(ms);
                                 var img = new DonationImage
                                 {
-                                    DonationId = existing.DonationID,
+                                    DonationId = existingToUpdate.DonationID,
                                     ImageData = ms.ToArray(),
                                     ContentType = file.ContentType ?? "application/octet-stream",
                                     FileName = file.FileName,
@@ -623,20 +630,28 @@ namespace EloDoacoes.Controllers
                     await _context.SaveChangesAsync();
                     return RedirectToAction(nameof(MyDonations));
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (DbUpdateConcurrencyException ex)
                 {
-                    if (!DonationExists(donation.DonationID))
+                    var exceptionEntry = ex.Entries.Single();
+                    var databaseEntry = await exceptionEntry.GetDatabaseValuesAsync();
+                    if (databaseEntry == null)
                     {
-                        return NotFound();
+                        ModelState.AddModelError(string.Empty,
+                            "Não foi possível salvar as alterações. A doação foi excluída por outro usuário.");
                     }
                     else
                     {
-                        throw;
+                        var databaseValues = (Donation)databaseEntry.ToObject();
+
+                        ModelState.AddModelError(string.Empty, "O registro que você tentou editar foi modificado por outro usuário após você ter carregado a página. A operação de edição foi cancelada e os valores atuais do banco de dados foram carregados. Se você ainda deseja editar este registro, clique no botão Salvar Alterações novamente.");
+                        existingToUpdate.RowVersion = (byte[])databaseValues.RowVersion;
+                        ModelState.Remove("RowVersion");
                     }
                 }
             }
-            ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name", categoryId);
-            return View(donation);
+
+            ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name", categoryId ?? existingToUpdate.Category?.CategoryID);
+            return View(existingToUpdate);
         }
 
         // GET: Donations/Delete/5

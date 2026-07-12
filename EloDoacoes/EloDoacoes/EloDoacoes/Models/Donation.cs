@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace EloDoacoes.Models
 {
@@ -18,5 +19,8 @@ namespace EloDoacoes.Models
         public DonationStatus DonationStatus { get; set; }
         public ICollection<Reservation> Reservations { get; set; }
         public ICollection<DonationImage> DonationImages { get; set; }
+
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
     }
 }
