@@ -1,25 +1,36 @@
 @model ErrorViewModel
 @{
-    ViewData["Title"] = "Erro";
+    ViewData["Title"] = "Erro no Sistema";
 }
 
-<h1 class="text-danger">Erro.</h1>
-<h2 class="text-danger">Ocorreu um erro ao processar sua requisição.</h2>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card border-danger shadow-sm rounded-3 overflow-hidden">
+                <div class="card-header bg-danger text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ops! Ocorreu um erro inesperado</h5>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <h5 class="text-dark fw-bold mb-3">Lamentamos o inconveniente</h5>
+                    <p class="text-secondary mb-4">
+                        Ocorreu uma falha ao processar a sua requisição no sistema. Nossa equipe técnica foi notificada.
+                    </p>
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>ID da Requisição:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+                    @if (Model != null && Model.ShowRequestId)
+                    {
+                        <div class="bg-light p-3 rounded border mb-4">
+                            <span class="small text-muted d-block">Identificador técnico do erro (ID da Requisição):</span>
+                            <code class="fw-bold text-dark">@Model.RequestId</code>
+                        </div>
+                    }
 
-<h3>Modo de Desenvolvimento</h3>
-<p>
-    Alternar para o ambiente de <strong>Desenvolvimento</strong> exibirá informações mais detalhadas sobre o erro ocorrido.
-</p>
-<p>
-    <strong>O ambiente de Desenvolvimento não deve ser habilitado para aplicações em produção.</strong>
-    Isso pode resultar na exibição de informações sensíveis de exceções para os usuários finais.
-    Para depuração local, habilite o ambiente de <strong>Desenvolvimento</strong> definindo a variável de ambiente <strong>ASPNETCORE_ENVIRONMENT</strong> como <strong>Development</strong>
-    e reiniciando a aplicação.
-</p>
+                    <div class="d-flex justify-content-end">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary px-4">
+                            Voltar para a Página Inicial
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

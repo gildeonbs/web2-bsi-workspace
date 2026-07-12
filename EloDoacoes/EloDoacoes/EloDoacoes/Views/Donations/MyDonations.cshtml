@@ -4,33 +4,56 @@
     ViewData["Title"] = "Minhas Doações";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>@ViewData["Title"]</h1>
-    <p class="mb-0">
-        <a asp-action="Create" class="btn btn-sm btn-success">Criar Nova Doação</a>
-    </p>
-</div>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-}
-
-@if (Model == null || Model.Items == null || !Model.Items.Any())
-{
-    <div class="alert alert-info">Você ainda não possui doações cadastradas.</div>
-}
-else
-{
-    <div class="row g-4 mb-5 justify-content-start">
-        @foreach (var donation in Model.Items)
-        {
-            <div class="col-12 col-md-6 col-lg-4">
-                <partial name="_DonationCard" model="donation" />
-            </div>
-        }
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold text-primary mb-1">Minhas Doações</h1>
+            <p class="text-secondary mb-0">Gerencie todos os itens cadastrados por você no sistema.</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary shadow-sm">
+            Criar Nova Doação
+        </a>
     </div>
 
-    @* Include pagination component *@
-    <partial name="_PaginationPartial" model="Model" />
-}
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    }
+
+    @if (Model == null || Model.Items == null || !Model.Items.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-3 text-center p-5 my-4">
+            <div class="py-4">
+                <h4 class="fw-bold text-secondary mb-3">Nenhuma doação cadastrada</h4>
+                <p class="text-muted mb-4">Você ainda não registrou nenhuma doação. Clique no botão abaixo para começar a doar!</p>
+                <a asp-action="Create" class="btn btn-primary btn-lg px-4">
+                    Criar Nova Doação
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4 mb-5 justify-content-start">
+            @foreach (var donation in Model.Items)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <partial name="_DonationCard" model="donation" />
+                </div>
+            }
+        </div>
+
+        @* Include pagination component *@
+        <partial name="_PaginationPartial" model="Model" />
+    }
+</div>

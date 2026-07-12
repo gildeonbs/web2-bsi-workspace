@@ -27,17 +27,21 @@
         </p>
 
         <div class="mt-auto pt-2 border-top">
-            @if (!Model.IsOwner)
+            @if (Model.IsOwner)
+            {
+                <span class="badge bg-secondary w-100 py-2 d-block">Sua doação</span>
+            }
+            else if (Model.HasUserReserved)
+            {
+                <button type="button" class="btn btn-secondary w-100 py-2" disabled>Você já reservou</button>
+            }
+            else
             {
                 <form asp-controller="Donations" asp-action="Reserve" method="post" class="d-inline">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="donationId" value="@Model.DonationId" />
                     <button type="submit" class="btn btn-primary w-100 py-2">Reservar Doação</button>
                 </form>
-            }
-            else
-            {
-                <span class="badge bg-secondary w-100 py-2 d-block">Sua doação</span>
             }
         </div>
     </div>

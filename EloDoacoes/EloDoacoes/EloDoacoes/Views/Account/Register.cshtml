@@ -1,51 +1,69 @@
-﻿@model RegisterViewModel
+@model RegisterViewModel
 
-<h2>Cadastro</h2>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+@{
+    ViewData["Title"] = "Cadastre-se";
 }
 
-<form asp-action="Register" method="post" novalidate>
-    @Html.AntiForgeryToken()
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold text-primary mb-1">Criar Nova Conta</h2>
+                    <p class="text-secondary small mb-0">Junte-se à nossa rede de solidariedade e doações</p>
+                </div>
 
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                        @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                    </div>
+                }
 
-    <div class="form-group">
-        <label asp-for="Name">Nome</label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+                <form asp-action="Register" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold text-dark">Nome Completo</label>
+                        <input asp-for="Name" class="form-control shadow-sm" placeholder="Digite seu nome completo" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-semibold text-dark">E-mail</label>
+                        <input asp-for="Email" class="form-control shadow-sm" placeholder="exemplo@dominio.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label fw-semibold text-dark">Senha</label>
+                        <input asp-for="Password" type="password" class="form-control shadow-sm" placeholder="Crie uma senha segura" />
+                        <div class="form-text small text-muted">Mínimo 8 caracteres, incluindo uma letra maiúscula, um número e um caractere especial.</div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="ConfirmPassword" class="form-label fw-semibold text-dark">Confirmar Senha</label>
+                        <input asp-for="ConfirmPassword" type="password" class="form-control shadow-sm" placeholder="Repita a senha" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm">Cadastrar</button>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="text-center small">
+                        Já possui conta no sistema? <a asp-action="Login" class="text-decoration-none text-primary fw-bold">Entrar na conta</a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-
-    <div class="form-group">
-        <label asp-for="Email">Email</label>
-        <input asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="Password">Senha</label>
-        <input asp-for="Password" class="form-control" />
-        <small class="form-text text-muted">Mínimo 8 caracteres, incluindo uma letra maiúscula, um número e um caractere especial.</small>
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="ConfirmPassword">Confirmar senha</label>
-        <input asp-for="ConfirmPassword" class="form-control" />
-        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-    </div>
-
-    <br />
-
-    <button type="submit" class="btn btn-success">Cadastrar</button>
-
-</form>
-
-<p>
-    Já possui conta? <a asp-action="Login">Entrar</a>
-</p>
+</div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

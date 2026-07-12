@@ -9,10 +9,20 @@
     int.TryParse(currentUserIdClaim, out int currentUserId);
     bool isOwner = Model.User != null && Model.User.UserID == currentUserId;
     bool isAvailable = Model.DonationStatus != null && (Model.DonationStatus.Name == DonationStatusNameEnum.Available || Model.DonationStatus.Name == DonationStatusNameEnum.Reserved);
+    bool hasReserved = Model.Reservations != null && Model.Reservations.Any(r => r.User != null && r.User.UserID == currentUserId && r.ReservationStatus != null && (r.ReservationStatus.Name == ReservationStatusNameEnum.Pending || r.ReservationStatus.Name == ReservationStatusNameEnum.Confirmed));
 }
 
 <div class="container my-4">
-   
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold text-primary mb-1">@Model.Title</h1>
+            <p class="text-secondary mb-0">Confira todas as informações detalhadas e fotos deste item.</p>
+        </div>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary">
+            Voltar ao Feed
+        </a>
+    </div>
+
     <div class="row g-5">
         @* Left Column: Photo Gallery *@
         <div class="col-12 col-lg-7">
@@ -92,9 +102,24 @@
                     @if (isOwner)
                     {
                         <div class="alert alert-secondary mb-3 text-center">Esta é uma doação cadastrada por você.</div>
-                        <a asp-controller="Donations" asp-action="Edit" asp-route-id="@Model.DonationID" class="btn btn-warning w-100 py-2 mb-4">
-                            Editar Doação
-                        </a>
+                        <div class="d-flex flex-wrap gap-2 mb-4">
+                            <a asp-controller="Donations" asp-action="Edit" asp-route-id="@Model.DonationID" class="btn btn-warning flex-grow-1 py-2 fw-bold">
+                                Editar Doação
+                            </a>
+                            <a asp-controller="Donations" asp-action="Delete" asp-route-id="@Model.DonationID" class="btn btn-danger flex-grow-1 py-2 fw-bold">
+                                Excluir Doação
+                            </a>
+                            @if (isAvailable)
+                            {
+                                <form asp-controller="Donations" asp-action="CompleteDonation" method="post" class="flex-grow-1">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="donationId" value="@Model.DonationID" />
+                                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold" onclick="return confirm('Deseja marcar esta doação como Concluída? Isso irá confirmar as reservas pendentes.');">
+                                        Concluir Doação
+                                    </button>
+                                </form>
+                            }
+                        </div>
 
                         @* SECTION: List of interested users for owner approval *@
                         <div class="card border shadow-sm rounded-3 p-3 bg-light">
@@ -146,6 +171,12 @@
                                 <p class="text-muted small mb-0">Nenhum usuário demonstrou interesse nesta doação ainda.</p>
                             }
                         </div>
+                    }
+                    else if (hasReserved)
+                    {
+                        <button class="btn btn-secondary btn-lg w-100 py-3" disabled>
+                            Você já reservou esta doação
+                        </button>
                     }
                     else if (isAvailable)
                     {
