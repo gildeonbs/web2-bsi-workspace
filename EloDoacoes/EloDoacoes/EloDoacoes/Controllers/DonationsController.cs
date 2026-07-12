@@ -268,6 +268,9 @@ namespace EloDoacoes.Controllers
             var query = _context.Donations
                 .Include(d => d.DonationImages)
                 .Include(d => d.Category)
+                .Include(d => d.DonationStatus)
+                .Include(d => d.Reservations)
+                    .ThenInclude(r => r.ReservationStatus)
                 .AsNoTracking();
 
             if (!string.IsNullOrEmpty(searchString))
@@ -397,6 +400,113 @@ namespace EloDoacoes.Controllers
             TempData["SuccessMessage"] = $"Reserva aprovada para {reservation.User?.Name ?? reservation.User?.Email}! A doação foi concluída e removida do feed.";
 
             return RedirectToAction("Details", "Donations", new { id = reservation.Donation.DonationID });
+        }
+
+        // POST: Donations/RejectReservation
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectReservation(int reservationId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var reservation = await _context.Reservations
+                .Include(r => r.Donation)
+                    .ThenInclude(d => d.User)
+                .Include(r => r.Donation)
+                    .ThenInclude(d => d.DonationStatus)
+                .Include(r => r.User)
+                .Include(r => r.ReservationStatus)
+                .FirstOrDefaultAsync(r => r.ReservationID == reservationId);
+
+            if (reservation == null || reservation.Donation == null || reservation.Donation.User == null || reservation.Donation.User.UserID != currentUserId)
+            {
+                TempData["ErrorMessage"] = "Apenas o proprietário da doação pode recusar uma reserva.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var cancelledStatus = await _context.ReservationsStatuses
+                .FirstOrDefaultAsync(rs => rs.Name == ReservationStatusNameEnum.Cancelled);
+            if (cancelledStatus != null)
+            {
+                reservation.ReservationStatus = cancelledStatus;
+                _context.Reservations.Update(reservation);
+            }
+
+            // Check if there are any remaining active reservations for this donation
+            bool hasRemainingActive = await _context.Reservations
+                .AnyAsync(r => r.Donation.DonationID == reservation.Donation.DonationID 
+                            && r.ReservationID != reservationId 
+                            && r.ReservationStatus != null 
+                            && r.ReservationStatus.Name != ReservationStatusNameEnum.Cancelled);
+
+            if (!hasRemainingActive)
+            {
+                var availableStatus = await _context.DonationStatuses
+                    .FirstOrDefaultAsync(ds => ds.Name == DonationStatusNameEnum.Available);
+                if (availableStatus != null)
+                {
+                    reservation.Donation.DonationStatus = availableStatus;
+                    _context.Donations.Update(reservation.Donation);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"Reserva de {(reservation.User?.Name ?? reservation.User?.Email ?? "usuário")} recusada. {(hasRemainingActive ? "" : "A doação não possui mais reservas ativas e está liberada para edição.")}";
+
+            return RedirectToAction("Details", "Donations", new { id = reservation.Donation.DonationID });
+        }
+
+        // POST: Donations/RejectAllReservations
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectAllReservations(int donationId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var donation = await _context.Donations
+                .Include(d => d.User)
+                .Include(d => d.DonationStatus)
+                .Include(d => d.Reservations)
+                    .ThenInclude(r => r.ReservationStatus)
+                .FirstOrDefaultAsync(d => d.DonationID == donationId);
+
+            if (donation == null || donation.User == null || donation.User.UserID != currentUserId)
+            {
+                TempData["ErrorMessage"] = "Apenas o proprietário da doação pode gerenciar as reservas.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var cancelledStatus = await _context.ReservationsStatuses
+                .FirstOrDefaultAsync(rs => rs.Name == ReservationStatusNameEnum.Cancelled);
+            if (cancelledStatus != null && donation.Reservations != null)
+            {
+                foreach (var r in donation.Reservations.Where(r => r.ReservationStatus == null || r.ReservationStatus.Name != ReservationStatusNameEnum.Cancelled))
+                {
+                    r.ReservationStatus = cancelledStatus;
+                    _context.Reservations.Update(r);
+                }
+            }
+
+            var availableStatus = await _context.DonationStatuses
+                .FirstOrDefaultAsync(ds => ds.Name == DonationStatusNameEnum.Available);
+            if (availableStatus != null)
+            {
+                donation.DonationStatus = availableStatus;
+                _context.Donations.Update(donation);
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Todas as reservas foram recusadas. A doação agora está liberada para edição.";
+
+            return RedirectToAction("Details", "Donations", new { id = donationId });
         }
 
         // POST: Donations/CompleteDonation
@@ -549,6 +659,8 @@ namespace EloDoacoes.Controllers
                 .Include(d => d.DonationImages)
                 .Include(d => d.Category)
                 .Include(d => d.DonationStatus)
+                .Include(d => d.Reservations)
+                    .ThenInclude(r => r.ReservationStatus)
                 .FirstOrDefaultAsync(d => d.DonationID == id);
             if (donation == null)
             {
@@ -558,6 +670,12 @@ namespace EloDoacoes.Controllers
             if (donation.DonationStatus != null && donation.DonationStatus.Name == DonationStatusNameEnum.Completed)
             {
                 TempData["ErrorMessage"] = "Esta doação já foi concluída e não pode mais ser editada.";
+                return RedirectToAction(nameof(Details), new { id = donation.DonationID });
+            }
+
+            if (donation.Reservations != null && donation.Reservations.Any(r => r.ReservationStatus == null || r.ReservationStatus.Name != ReservationStatusNameEnum.Cancelled))
+            {
+                TempData["ErrorMessage"] = "Esta doação possui reservas ativas e não pode ser editada no momento. Apenas doações sem reservas ou com todas as reservas canceladas podem ser editadas.";
                 return RedirectToAction(nameof(Details), new { id = donation.DonationID });
             }
 
@@ -575,6 +693,8 @@ namespace EloDoacoes.Controllers
                 .Include(d => d.DonationImages)
                 .Include(d => d.Category)
                 .Include(d => d.DonationStatus)
+                .Include(d => d.Reservations)
+                    .ThenInclude(r => r.ReservationStatus)
                 .FirstOrDefaultAsync(d => d.DonationID == id);
 
             if (existingToUpdate == null)
@@ -589,6 +709,12 @@ namespace EloDoacoes.Controllers
             if (existingToUpdate.DonationStatus != null && existingToUpdate.DonationStatus.Name == DonationStatusNameEnum.Completed)
             {
                 TempData["ErrorMessage"] = "Esta doação já foi concluída e não pode mais ser editada.";
+                return RedirectToAction(nameof(Details), new { id = existingToUpdate.DonationID });
+            }
+
+            if (existingToUpdate.Reservations != null && existingToUpdate.Reservations.Any(r => r.ReservationStatus == null || r.ReservationStatus.Name != ReservationStatusNameEnum.Cancelled))
+            {
+                TempData["ErrorMessage"] = "Esta doação possui reservas ativas e não pode ser editada no momento. Apenas doações sem reservas ou com todas as reservas canceladas podem ser editadas.";
                 return RedirectToAction(nameof(Details), new { id = existingToUpdate.DonationID });
             }
 
