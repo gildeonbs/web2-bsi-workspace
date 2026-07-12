@@ -11,6 +11,8 @@
     bool isAvailable = Model.DonationStatus != null && (Model.DonationStatus.Name == DonationStatusNameEnum.Available || Model.DonationStatus.Name == DonationStatusNameEnum.Reserved);
     bool isCompleted = Model.DonationStatus != null && Model.DonationStatus.Name == DonationStatusNameEnum.Completed;
     bool hasReserved = Model.Reservations != null && Model.Reservations.Any(r => r.User != null && r.User.UserID == currentUserId && r.ReservationStatus != null && (r.ReservationStatus.Name == ReservationStatusNameEnum.Pending || r.ReservationStatus.Name == ReservationStatusNameEnum.Confirmed));
+    bool hasActiveReservations = Model.Reservations != null && Model.Reservations.Any(r => r.ReservationStatus == null || r.ReservationStatus.Name != ReservationStatusNameEnum.Cancelled);
+    bool canEdit = !isCompleted && !hasActiveReservations;
 }
 
 <div class="container my-4">
@@ -167,14 +169,18 @@
                                 <i class="bi bi-lock-fill me-1"></i> Esta doação foi <strong>Concluída</strong> e as opções de edição e exclusão estão bloqueadas.
                             </div>
                         }
+                        else if (hasActiveReservations)
+                        {
+                            <div class="alert alert-warning mb-3 text-center small">
+                                <i class="bi bi-lock-fill me-1"></i> A edição está bloqueada porque há reservas ativas. Apenas doações sem reservas ou com todas as reservas canceladas podem ser editadas.
+                            </div>
+                        }
                         <div class="d-flex flex-wrap gap-2 mb-4">
-                            @if (isCompleted)
+                            @if (!canEdit)
                             {
-                                <button type="button" class="btn btn-secondary flex-grow-1 py-2 fw-bold" disabled title="Doação concluída não pode ser editada">
+                                string editTitle = isCompleted ? "Doação concluída não pode ser editada" : "Doação com reservas ativas não pode ser editada";
+                                <button type="button" class="btn btn-secondary flex-grow-1 py-2 fw-bold" disabled title="@editTitle">
                                     <i class="bi bi-lock-fill me-1"></i> Editar Doação
-                                </button>
-                                <button type="button" class="btn btn-secondary flex-grow-1 py-2 fw-bold" disabled title="Doação concluída não pode ser excluída">
-                                    <i class="bi bi-lock-fill me-1"></i> Excluir Doação
                                 </button>
                             }
                             else
@@ -182,6 +188,15 @@
                                 <a asp-controller="Donations" asp-action="Edit" asp-route-id="@Model.DonationID" class="btn btn-warning flex-grow-1 py-2 fw-bold">
                                     Editar Doação
                                 </a>
+                            }
+                            @if (isCompleted)
+                            {
+                                <button type="button" class="btn btn-secondary flex-grow-1 py-2 fw-bold" disabled title="Doação concluída não pode ser excluída">
+                                    <i class="bi bi-lock-fill me-1"></i> Excluir Doação
+                                </button>
+                            }
+                            else
+                            {
                                 <a asp-controller="Donations" asp-action="Delete" asp-route-id="@Model.DonationID" class="btn btn-danger flex-grow-1 py-2 fw-bold">
                                     Excluir Doação
                                 </a>
@@ -200,9 +215,21 @@
 
                         @* SECTION: List of interested users for owner approval *@
                         <div class="card border shadow-sm rounded-3 p-3 bg-light">
-                            <h5 class="fw-bold text-dark mb-3">
-                                Lista de Interessados (@(Model.Reservations?.Count ?? 0))
-                            </h5>
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold text-dark mb-0">
+                                    Lista de Interessados (@(Model.Reservations?.Count ?? 0))
+                                </h5>
+                                @if (hasActiveReservations && !isCompleted)
+                                {
+                                    <form asp-controller="Donations" asp-action="RejectAllReservations" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="donationId" value="@Model.DonationID" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm fw-bold shadow-sm" onclick="return confirm('Deseja recusar todas as reservas ativas? Isso liberará a doação para edição novamente.');">
+                                            <i class="bi bi-x-circle me-1"></i> Recusar Todas as Reservas
+                                        </button>
+                                    </form>
+                                }
+                            </div>
                             @if (Model.Reservations != null && Model.Reservations.Any())
                             {
                                 <div class="list-group">
@@ -240,15 +267,27 @@
                                                 <span class="badge @statusBadge mt-1">@statusLabel</span>
                                             </div>
 
-                                            @if (res.ReservationStatus?.Name == ReservationStatusNameEnum.Pending)
+                                            @if (!isCompleted && res.ReservationStatus?.Name != ReservationStatusNameEnum.Cancelled)
                                             {
-                                                <form asp-controller="Donations" asp-action="ApproveReservation" method="post">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="reservationId" value="@res.ReservationID" />
-                                                    <button type="submit" class="btn btn-success btn-sm fw-bold px-3 shadow-sm" onclick="return confirm('Aprovar doação para @(res.User?.Name ?? res.User?.Email)? Isso irá concluir a doação e retirá-la do feed.');">
-                                                        Aprovar Usuário
-                                                    </button>
-                                                </form>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    @if (res.ReservationStatus?.Name == ReservationStatusNameEnum.Pending)
+                                                    {
+                                                        <form asp-controller="Donations" asp-action="ApproveReservation" method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="reservationId" value="@res.ReservationID" />
+                                                            <button type="submit" class="btn btn-success btn-sm fw-bold px-3 shadow-sm" onclick="return confirm('Aprovar doação para @(res.User?.Name ?? res.User?.Email)? Isso irá concluir a doação e retirá-la do feed.');">
+                                                                Aprovar Usuário
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    <form asp-controller="Donations" asp-action="RejectReservation" method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="reservationId" value="@res.ReservationID" />
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm fw-bold px-3 shadow-sm" onclick="return confirm('Recusar a reserva de @(res.User?.Name ?? res.User?.Email)?');">
+                                                            Recusar
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             }
                                         </div>
                                     }

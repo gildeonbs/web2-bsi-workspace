@@ -137,9 +137,15 @@
                             <p class="card-text text-secondary flex-grow-1 mb-3">@item.Description</p>
 
                             <div class="mt-auto pt-3 border-top d-flex gap-2">
-                                @if (item.DonationStatus != null && item.DonationStatus.Name == EloDoacoes.Models.DonationStatusNameEnum.Completed)
+                                @{
+                                    bool isItemCompleted = item.DonationStatus != null && item.DonationStatus.Name == EloDoacoes.Models.DonationStatusNameEnum.Completed;
+                                    bool itemHasActiveReservations = item.Reservations != null && item.Reservations.Any(r => r.ReservationStatus == null || r.ReservationStatus.Name != EloDoacoes.Models.ReservationStatusNameEnum.Cancelled);
+                                    bool canEditItem = !isItemCompleted && !itemHasActiveReservations;
+                                }
+                                @if (!canEditItem)
                                 {
-                                    <button type="button" class="btn btn-outline-secondary flex-grow-1" disabled title="Doação concluída não pode ser editada">
+                                    string editTitle = isItemCompleted ? "Doação concluída não pode ser editada" : "Doação com reservas ativas não pode ser editada";
+                                    <button type="button" class="btn btn-outline-secondary flex-grow-1" disabled title="@editTitle">
                                         <i class="bi bi-lock-fill me-1"></i>Editar
                                     </button>
                                 }
