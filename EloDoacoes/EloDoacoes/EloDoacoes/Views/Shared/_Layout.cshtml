@@ -4,6 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Elo Doações</title>
+    <!-- Favicon & PWA Icons -->
+    <link rel="icon" type="image/png" href="~/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="~/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="~/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="~/favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Elo Doações" />
+    <link rel="manifest" href="~/favicon/site.webmanifest" />
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
@@ -20,7 +28,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                    <ul class="navbar-nav flex-grow-1 align-items-center">
                         <!--
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
@@ -41,17 +49,17 @@
                                 var parts = User.Identity.Name.Trim().Split(' ');
                                 firstName = parts.Length > 0 ? parts[0] : User.Identity.Name;
                             }
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="form-inline my-0">
+                            <li class="nav-item d-flex align-items-center">
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="form-inline m-0 p-0 d-flex align-items-center">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-link nav-link text-dark" style="padding:0">Sair (@firstName)</button>
+                                    <button type="submit" class="nav-link btn btn-link text-dark fw-semibold border-0 py-2 px-3" style="cursor: pointer; text-decoration: none;">Sair (@firstName)</button>
                                 </form>
                             </li>
                         }
                         else
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Entrar</a>
+                            <li class="nav-item d-flex align-items-center">
+                                <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Account" asp-action="Login">Entrar</a>
                             </li>
                         }
                     </ul>

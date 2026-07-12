@@ -10,81 +10,16 @@ namespace EloDoacoes.Data
     {
         public static void Initialize(EloDoacoesContext context)
         {
-            // Commented out so user data and donations are permanently preserved across restarts:
-            // context.Database.EnsureDeleted();
-            context.Database.EnsureCreated();
+            // Transitioned to EF Core Migrations: EnsureCreated() and ad-hoc ExecuteSqlRaw have been removed
+            // so schema migrations and concurrency tokens are managed cleanly via EF Core Migrations.
 
-            // Ensure RowVersion concurrency token column exists on donation table in SQL Server
-            try
-            {
-                context.Database.ExecuteSqlRaw(@"
-                    IF NOT EXISTS (
-                        SELECT * FROM sys.columns 
-                        WHERE object_id = OBJECT_ID(N'donation') AND name = 'RowVersion'
-                    )
-                    BEGIN
-                        ALTER TABLE [donation] ADD [RowVersion] rowversion NOT NULL;
-                    END");
-            }
-            catch { }
-
-            // ## --------------------------------------------------------------------------------------------------------------
-            // Look for any roles.
-            if (context.Roles.Any())
-            {
-                return;   // DB has been seeded
-            }
-            var roles = new Role[]
-            {
-                new Role{Name=RoleEnum.StandardUser},
-                new Role{Name=RoleEnum.Admin}
-            };
-            foreach (Role r in roles)
-            {
-                context.Roles.Add(r);
-            }
-            context.SaveChanges();
-
-            // ## --------------------------------------------------------------------------------------------------------------
-            // Look for any users.
-            if (context.Users.Any())
-            {
-                return;   // DB has been seeded
-            }
-
-            var users = new User[]
-            {
-                new User{Name="John",Email="john.doe@example.com",PasswordHash="hashed_password_1",RegistrationDate=DateTime.Parse("2023-01-01"),Role=roles[0]},
-                new User{Name="Jane",Email="jane.smith@example.com",PasswordHash="hashed_password_2",RegistrationDate=DateTime.Parse("2023-01-01"),Role=roles[0]}
-            };
-            foreach (User u in users)
-            {
-                context.Users.Add(u);
-            }
-            context.SaveChanges();
-
-            var userJohn = users.First(u => u.Name == "John");
-            var userJane = users.First(u => u.Name == "Jane");
-
-            // ## --------------------------------------------------------------------------------------------------------------
-            // Ensure a comprehensive list of categories exists in the database
+            // Always ensure all categories exist in the database (idempotent check)
             var categoryNames = new[]
             {
-                "Livros",
-                "Móveis",
-                "Roupas",
-                "Alimentos",
-                "Eletrônicos",
-                "Brinquedos",
-                "Eletrodomésticos",
-                "Higiene e Limpeza",
-                "Material Escolar",
-                "Calçados",
-                "Esporte e Lazer",
-                "Ferramentas",
-                "Artigos para Bebês",
-                "Saúde e Bem-estar",
-                "Outros"
+                "Livros", "Móveis", "Roupas", "Alimentos", "Eletrônicos",
+                "Brinquedos", "Eletrodomésticos", "Higiene e Limpeza", "Material Escolar",
+                "Calçados", "Esporte e Lazer", "Ferramentas", "Artigos para Bebês",
+                "Saúde e Bem-estar", "Outros"
             };
 
             foreach (var catName in categoryNames)
@@ -95,6 +30,45 @@ namespace EloDoacoes.Data
                 }
             }
             context.SaveChanges();
+
+            // ## --------------------------------------------------------------------------------------------------------------
+            // Look for any roles.
+            if (!context.Roles.Any())
+            {
+                var roles = new Role[]
+                {
+                    new Role{Name=RoleEnum.StandardUser},
+                    new Role{Name=RoleEnum.Admin}
+                };
+                foreach (Role r in roles)
+                {
+                    context.Roles.Add(r);
+                }
+                context.SaveChanges();
+            }
+
+            // ## --------------------------------------------------------------------------------------------------------------
+            // Look for any users.
+            if (context.Users.Any())
+            {
+                return;   // DB has been seeded
+            }
+
+            var standardRole = context.Roles.First(r => r.Name == RoleEnum.StandardUser);
+            var users = new User[]
+            {
+                new User{Name="John",Email="john.doe@example.com",PasswordHash="hashed_password_1",RegistrationDate=DateTime.Parse("2023-01-01"),Role=standardRole},
+                new User{Name="Jane",Email="jane.smith@example.com",PasswordHash="hashed_password_2",RegistrationDate=DateTime.Parse("2023-01-01"),Role=standardRole}
+            };
+            foreach (User u in users)
+            {
+                context.Users.Add(u);
+            }
+            context.SaveChanges();
+
+            var userJohn = users.First(u => u.Name == "John");
+            var userJane = users.First(u => u.Name == "Jane");
+
 
             var donationCategoryBook = context.Categories.First(c => c.Name == "Livros");
             var donationCategoryFurniture = context.Categories.First(c => c.Name == "Móveis");
