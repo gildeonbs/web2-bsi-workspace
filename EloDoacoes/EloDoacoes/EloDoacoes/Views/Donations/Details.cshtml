@@ -68,9 +68,28 @@
         @* Right Column: Details & Donor Info *@
         <div class="col-12 col-lg-5">
             <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+                @{
+                    string detailsStatusClass = "bg-success text-white";
+                    string detailsStatusText = "Disponível";
+                    if (Model.DonationStatus?.Name == EloDoacoes.Models.DonationStatusNameEnum.Reserved)
+                    {
+                        detailsStatusClass = "bg-warning text-dark";
+                        detailsStatusText = "Reservado";
+                    }
+                    else if (Model.DonationStatus?.Name == EloDoacoes.Models.DonationStatusNameEnum.Completed)
+                    {
+                        detailsStatusClass = "bg-info text-white";
+                        detailsStatusText = "Concluído";
+                    }
+                    else if (Model.DonationStatus?.Name == EloDoacoes.Models.DonationStatusNameEnum.Cancelled)
+                    {
+                        detailsStatusClass = "bg-secondary text-white";
+                        detailsStatusText = "Cancelado";
+                    }
+                }
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <span class="badge bg-primary px-3 py-2">@(Model.Category?.Name ?? "Geral")</span>
-                    <span class="badge bg-light text-dark border px-3 py-2">Status: <strong>@(Model.DonationStatus?.Name.ToString() ?? "Disponível")</strong></span>
+                    <span class="badge @detailsStatusClass px-3 py-2">Status: <strong>@detailsStatusText</strong></span>
                 </div>
 
                 <h2 class="fw-bold text-primary mb-3">@Model.Title</h2>

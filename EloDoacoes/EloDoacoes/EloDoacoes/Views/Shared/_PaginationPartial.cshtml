@@ -1,6 +1,18 @@
 @using EloDoacoes.ViewModels;
 @model PagedResult<DonationCardViewModel>
 
+@{
+    string qParams = "";
+    if (ViewData["CurrentFilter"] != null)
+    {
+        qParams += $"&searchString={System.Net.WebUtility.UrlEncode(ViewData["CurrentFilter"].ToString())}";
+    }
+    if (ViewData["CurrentSort"] != null)
+    {
+        qParams += $"&sortOrder={System.Net.WebUtility.UrlEncode(ViewData["CurrentSort"].ToString())}";
+    }
+}
+
 @if (Model != null && Model.TotalCount > 0)
 {
     @if (Model.TotalPages > 1)
@@ -11,7 +23,7 @@
                 @if (Model.HasPreviousPage)
                 {
                     <li class="page-item">
-                        <a class="page-link" href="?page=@Model.PreviousPageNumber" aria-label="Página anterior">
+                        <a class="page-link" href="?page=@Model.PreviousPageNumber@qParams" aria-label="Página anterior">
                             <span aria-hidden="true">&laquo;</span> Anterior
                         </a>
                     </li>
@@ -38,7 +50,7 @@
                     else
                     {
                         <li class="page-item">
-                            <a class="page-link" href="?page=@i">@i</a>
+                            <a class="page-link" href="?page=@i@qParams">@i</a>
                         </li>
                     }
                 }
@@ -47,7 +59,7 @@
                 @if (Model.HasNextPage)
                 {
                     <li class="page-item">
-                        <a class="page-link" href="?page=@Model.NextPageNumber" aria-label="Próxima página">
+                        <a class="page-link" href="?page=@Model.NextPageNumber@qParams" aria-label="Próxima página">
                             Próxima <span aria-hidden="true">&raquo;</span>
                         </a>
                     </li>

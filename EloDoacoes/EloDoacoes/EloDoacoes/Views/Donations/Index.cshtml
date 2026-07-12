@@ -31,6 +31,64 @@
         </div>
     }
 
+    @* Search and Filter UI Section *@
+    <div class="card border-0 shadow-sm rounded-3 p-3 p-md-4 mb-4 bg-white">
+        <form asp-action="Index" method="get">
+            <div class="row g-2 align-items-center">
+                <div class="col-12 col-md-5">
+                    <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" class="form-control shadow-sm" placeholder="Buscar por título, descrição ou categoria..." />
+                </div>
+                <div class="col-12 col-md-3">
+                    <select name="sortOrder" class="form-control shadow-sm">
+                        @if (ViewData["CurrentSort"] as string == "date_desc" || ViewData["CurrentSort"] == null)
+                        {
+                            <option value="date_desc" selected>Mais Recentes</option>
+                        }
+                        else
+                        {
+                            <option value="date_desc">Mais Recentes</option>
+                        }
+
+                        @if (ViewData["CurrentSort"] as string == "date_asc")
+                        {
+                            <option value="date_asc" selected>Mais Antigos</option>
+                        }
+                        else
+                        {
+                            <option value="date_asc">Mais Antigos</option>
+                        }
+
+                        @if (ViewData["CurrentSort"] as string == "title_asc")
+                        {
+                            <option value="title_asc" selected>Título (A-Z)</option>
+                        }
+                        else
+                        {
+                            <option value="title_asc">Título (A-Z)</option>
+                        }
+
+                        @if (ViewData["CurrentSort"] as string == "title_desc")
+                        {
+                            <option value="title_desc" selected>Título (Z-A)</option>
+                        }
+                        else
+                        {
+                            <option value="title_desc">Título (Z-A)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary fw-bold px-4 shadow-sm flex-grow-1">
+                        Buscar
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary px-3 shadow-sm">
+                        Limpar Filtros
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
     @if (Model == null || !Model.Any())
     {
         <div class="card border-0 shadow-sm rounded-3 text-center p-5 my-4">
