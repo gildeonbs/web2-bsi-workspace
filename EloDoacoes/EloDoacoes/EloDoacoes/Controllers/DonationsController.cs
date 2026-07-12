@@ -548,11 +548,19 @@ namespace EloDoacoes.Controllers
             var donation = await _context.Donations
                 .Include(d => d.DonationImages)
                 .Include(d => d.Category)
+                .Include(d => d.DonationStatus)
                 .FirstOrDefaultAsync(d => d.DonationID == id);
             if (donation == null)
             {
                 return NotFound();
             }
+
+            if (donation.DonationStatus != null && donation.DonationStatus.Name == DonationStatusNameEnum.Completed)
+            {
+                TempData["ErrorMessage"] = "Esta doação já foi concluída e não pode mais ser editada.";
+                return RedirectToAction(nameof(Details), new { id = donation.DonationID });
+            }
+
             ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name", donation.Category?.CategoryID);
             return View(donation);
         }
@@ -566,6 +574,7 @@ namespace EloDoacoes.Controllers
             var existingToUpdate = await _context.Donations
                 .Include(d => d.DonationImages)
                 .Include(d => d.Category)
+                .Include(d => d.DonationStatus)
                 .FirstOrDefaultAsync(d => d.DonationID == id);
 
             if (existingToUpdate == null)
@@ -575,6 +584,12 @@ namespace EloDoacoes.Controllers
                 ModelState.AddModelError(string.Empty, "Não foi possível salvar as alterações. A doação já foi excluída por você anteriormente.");
                 ViewBag.CategoryList = new SelectList(_context.Categories.AsNoTracking().ToList(), "CategoryID", "Name", categoryId);
                 return View(deletedDonation);
+            }
+
+            if (existingToUpdate.DonationStatus != null && existingToUpdate.DonationStatus.Name == DonationStatusNameEnum.Completed)
+            {
+                TempData["ErrorMessage"] = "Esta doação já foi concluída e não pode mais ser editada.";
+                return RedirectToAction(nameof(Details), new { id = existingToUpdate.DonationID });
             }
 
             _context.Entry(existingToUpdate).Property("RowVersion").OriginalValue = rowVersion;
@@ -665,10 +680,17 @@ namespace EloDoacoes.Controllers
             var donation = await _context.Donations
                 .Include(d => d.Category)
                 .Include(d => d.User)
+                .Include(d => d.DonationStatus)
                 .FirstOrDefaultAsync(m => m.DonationID == id);
             if (donation == null)
             {
                 return NotFound();
+            }
+
+            if (donation.DonationStatus != null && donation.DonationStatus.Name == DonationStatusNameEnum.Completed)
+            {
+                TempData["ErrorMessage"] = "Esta doação já foi concluída e não pode mais ser excluída.";
+                return RedirectToAction(nameof(Details), new { id = donation.DonationID });
             }
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -694,7 +716,14 @@ namespace EloDoacoes.Controllers
 
             var donation = await _context.Donations
                 .Include(d => d.User)
+                .Include(d => d.DonationStatus)
                 .FirstOrDefaultAsync(d => d.DonationID == id && d.User.UserID == currentUserId);
+
+            if (donation != null && donation.DonationStatus != null && donation.DonationStatus.Name == DonationStatusNameEnum.Completed)
+            {
+                TempData["ErrorMessage"] = "Esta doação já foi concluída e não pode mais ser excluída.";
+                return RedirectToAction(nameof(Details), new { id = donation.DonationID });
+            }
 
             if (donation != null)
             {
