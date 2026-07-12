@@ -260,14 +260,41 @@ namespace EloDoacoes.Controllers
         }
 
         // GET: Donations
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string sortOrder, string searchString)
         {
-            // include images so the Index view can show thumbnails
-            var donations = await _context.Donations
+            ViewData["CurrentSort"] = sortOrder;
+            ViewData["CurrentFilter"] = searchString;
+
+            var query = _context.Donations
                 .Include(d => d.DonationImages)
-                .AsNoTracking()
-                .ToListAsync();
-            return View(donations);
+                .Include(d => d.Category)
+                .AsNoTracking();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(d => d.Title.Contains(searchString)
+                                      || (d.Description != null && d.Description.Contains(searchString))
+                                      || (d.Category != null && d.Category.Name.Contains(searchString)));
+            }
+
+            switch (sortOrder)
+            {
+                case "date_asc":
+                    query = query.OrderBy(d => d.RegistrationDate);
+                    break;
+                case "title_asc":
+                    query = query.OrderBy(d => d.Title);
+                    break;
+                case "title_desc":
+                    query = query.OrderByDescending(d => d.Title);
+                    break;
+                case "date_desc":
+                default:
+                    query = query.OrderByDescending(d => d.RegistrationDate);
+                    break;
+            }
+
+            return View(await query.ToListAsync());
         }
 
         // GET: Donations/Details/5

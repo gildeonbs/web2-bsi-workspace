@@ -27,12 +27,16 @@ namespace EloDoacoes.Controllers
 
         // GET: Home/Index - display available donations feed with server-side pagination
         // Returns only donations with "Available" status, excluding current user's donations if authenticated
-        public async Task<IActionResult> Index(int page = 1)
+        public async Task<IActionResult> Index(string sortOrder, string searchString, int page = 1)
         {
             const int pageSize = 9; // Fixed page size: 9 donations per page (3x3 grid)
 
             // Ensure valid page number
             if (page < 1) page = 1;
+
+            // Store current states in ViewData
+            ViewData["CurrentSort"] = sortOrder;
+            ViewData["CurrentFilter"] = searchString;
 
             // Extract current user ID from claims (if authenticated)
             int? currentUserId = null;
@@ -51,10 +55,19 @@ namespace EloDoacoes.Controllers
                 .Include(d => d.DonationStatus)
                 .Include(d => d.DonationImages)
                 .Include(d => d.User)
+                .Include(d => d.Category)
                 .Include(d => d.Reservations)
                     .ThenInclude(r => r.ReservationStatus)
                 .Where(d => (d.DonationStatus.Name == DonationStatusNameEnum.Available || d.DonationStatus.Name == DonationStatusNameEnum.Reserved)
                          && !d.Reservations.Any(r => r.ReservationStatus != null && r.ReservationStatus.Name == ReservationStatusNameEnum.Confirmed));
+
+            // Filter by searchString
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(d => d.Title.Contains(searchString)
+                                      || (d.Description != null && d.Description.Contains(searchString))
+                                      || (d.Category != null && d.Category.Name.Contains(searchString)));
+            }
 
             // Filter: If user is authenticated, exclude their own donations
             if (currentUserId.HasValue)
@@ -62,8 +75,23 @@ namespace EloDoacoes.Controllers
                 query = query.Where(d => d.User != null && d.User.UserID != currentUserId.Value);
             }
 
-            // Order by most recent first
-            query = query.OrderByDescending(d => d.RegistrationDate);
+            // Apply sortOrder switch statement
+            switch (sortOrder)
+            {
+                case "date_asc":
+                    query = query.OrderBy(d => d.RegistrationDate);
+                    break;
+                case "title_asc":
+                    query = query.OrderBy(d => d.Title);
+                    break;
+                case "title_desc":
+                    query = query.OrderByDescending(d => d.Title);
+                    break;
+                case "date_desc":
+                default:
+                    query = query.OrderByDescending(d => d.RegistrationDate);
+                    break;
+            }
 
             // Get total count BEFORE pagination
             var totalCount = await query.CountAsync();

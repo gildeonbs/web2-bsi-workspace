@@ -18,8 +18,31 @@
             </a>
         </h5>
         <p class="card-text text-secondary flex-grow-1 mb-3">@Model.ShortDescription</p>
+        @{
+            string cardBadgeClass = "bg-success text-white";
+            string cardStatusText = "Disponível";
+            if (Model.DonationStatus == "Reserved" || Model.DonationStatus == "Reservado")
+            {
+                cardBadgeClass = "bg-warning text-dark";
+                cardStatusText = "Reservado";
+            }
+            else if (Model.DonationStatus == "Completed" || Model.DonationStatus == "Concluído")
+            {
+                cardBadgeClass = "bg-info text-white";
+                cardStatusText = "Concluído";
+            }
+            else if (Model.DonationStatus == "Cancelled" || Model.DonationStatus == "Cancelado")
+            {
+                cardBadgeClass = "bg-secondary text-white";
+                cardStatusText = "Cancelado";
+            }
+            else if (!string.IsNullOrEmpty(Model.DonationStatus) && Model.DonationStatus != "Available" && Model.DonationStatus != "Disponível")
+            {
+                cardStatusText = Model.DonationStatus;
+            }
+        }
         <p class="card-text mb-3">
-            <span class="badge bg-light text-dark border py-1 px-2">Status: <strong>@Model.DonationStatus</strong></span>
+            <span class="badge @cardBadgeClass py-1 px-2">Status: <strong>@cardStatusText</strong></span>
             @if (Model.ReservationsCount > 0)
             {
                 <span class="badge bg-warning text-dark border py-1 px-2 ms-1">@Model.ReservationsCount interessado(s) em reserva</span>
