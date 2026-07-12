@@ -117,6 +117,7 @@ public class AccountController : Controller
             {
                 Name = model.Name?.Trim(),
                 Email = normalizedEmail,
+                Phone = model.Phone?.Trim(),
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
                 RegistrationDate = DateTime.UtcNow
             };

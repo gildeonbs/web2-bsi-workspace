@@ -107,8 +107,32 @@
                 <div class="bg-light p-3 rounded-3 mb-4">
                     @if (Model.User != null)
                     {
-                        <p class="mb-1"><strong>Doador:</strong> @(string.IsNullOrWhiteSpace(Model.User.Name) ? Model.User.Email : Model.User.Name)</p>
-                        <p class="mb-0"><strong>Contato (E-mail):</strong> <a href="mailto:@Model.User.Email">@Model.User.Email</a></p>
+                        var donorDisplayName = string.IsNullOrWhiteSpace(Model.User.Name) 
+                            ? (User?.Identity?.IsAuthenticated == true ? Model.User.Email : "Usuário Doador") 
+                            : Model.User.Name;
+                        <p class="mb-1"><strong>Doador:</strong> @donorDisplayName</p>
+
+                        @if (User?.Identity?.IsAuthenticated == true)
+                        {
+                            @if (!string.IsNullOrWhiteSpace(Model.User.Phone))
+                            {
+                                var rawPhone = new string(Model.User.Phone.Where(char.IsDigit).ToArray());
+                                <p class="mb-1">
+                                    <strong>WhatsApp / Telefone:</strong> 
+                                    <a href="https://wa.me/55@(rawPhone)" target="_blank" class="text-success fw-bold text-decoration-none">
+                                        @Model.User.Phone
+                                    </a>
+                                </p>
+                            }
+                            <p class="mb-0"><strong>E-mail:</strong> <a href="mailto:@Model.User.Email">@Model.User.Email</a></p>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning mt-3 mb-0 py-2 small d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                <span><i class="bi bi-lock-fill me-1"></i> Para visualizar o telefone e e-mail de contato do doador, faça login em sua conta.</span>
+                                <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path" class="btn btn-sm btn-outline-dark fw-bold">Entrar</a>
+                            </div>
+                        }
                     }
                     else
                     {
@@ -165,8 +189,19 @@
 
                                         <div class="list-group-item d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
                                             <div>
-                                                <strong>@(res.User?.Name ?? res.User?.Email)</strong>
-                                                <div class="small text-muted">E-mail: @res.User?.Email</div>
+                                                <strong>@(res.User?.Name ?? (User?.Identity?.IsAuthenticated == true ? res.User?.Email : "Usuário Interessado"))</strong>
+                                                @if (User?.Identity?.IsAuthenticated == true)
+                                                {
+                                                    @if (!string.IsNullOrWhiteSpace(res.User?.Phone))
+                                                    {
+                                                        var rawResPhone = new string(res.User.Phone.Where(char.IsDigit).ToArray());
+                                                        <div class="small">
+                                                            <span class="text-muted">WhatsApp:</span>
+                                                            <a href="https://wa.me/55@(rawResPhone)" target="_blank" class="text-success fw-bold text-decoration-none">@res.User.Phone</a>
+                                                        </div>
+                                                    }
+                                                    <div class="small text-muted">E-mail: @res.User?.Email</div>
+                                                }
                                                 <div class="small text-muted">Data: @res.ReservationDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
                                                 <span class="badge @statusBadge mt-1">@statusLabel</span>
                                             </div>
